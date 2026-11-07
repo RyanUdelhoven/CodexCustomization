@@ -19,6 +19,12 @@ Treat the installed and session-available skills as an interacting system. A cre
 
 For an explicitly requested review without edits, report findings and proposed wording rather than applying changes. Honor an explicitly restricted edit scope while still identifying interactions outside it; report those external issues without changing them.
 
+## Sync the custom skills repository
+
+The user authorizes a GitHub push after every completed deconfliction pass. After validation and installation/finalization, review the diff in `~/.codex/skills`, stage only the finalized skill changes from this task, commit them with a descriptive message, and push to `origin` (`git@github.com:Arkmer/codex_skills.git`). Preserve unrelated working-tree and staged changes; do not include them in the commit. This synchronization applies to this custom skills repository, not repositories containing applications or plugin-managed artifacts.
+
+For a review with no skill changes, push the existing branch without creating an empty commit; preserve the read-only review scope. Verify the push result and report the commit or that no new commit was needed. If authentication, permissions, remote changes, or conflicts block synchronization, retain the local work and report the blocker. Do not force-push, rewrite history, or repeat deconfliction merely because synchronization changes Git metadata. Follow explicit user overrides and required execution approvals.
+
 ## Completion report for skill creation or updates
 
 Give the user a small report after building or updating skills. For each created or updated skill, provide:
