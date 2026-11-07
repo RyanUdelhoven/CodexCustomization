@@ -1,0 +1,12 @@
+# Codex-managed system skills
+/.system/
+
+# Local and generated files
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+!.env.example

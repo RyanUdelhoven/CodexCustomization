@@ -1,0 +1,3 @@
+interface:
+  display_name: "Context Audit"
+  short_description: "Audit context overhead and token consumption"
