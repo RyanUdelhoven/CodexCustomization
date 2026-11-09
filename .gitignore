@@ -8,6 +8,9 @@
 !/skills/
 /skills/*
 !/skills/AGENTS.md
+!/skills/analyze-youtube/
+!/skills/task-research/
+!/skills/cost-aware-options-review/
 !/skills/architecture-mapper/
 !/skills/code-change-verification/
 !/skills/context-audit/
