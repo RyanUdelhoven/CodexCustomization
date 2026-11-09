@@ -1,41 +1,35 @@
 # Codex customizations
 
-Personal Codex skills, working instructions, portable approval hooks, and configuration examples.
+This Git repository is rooted at `~/.codex/`. It tracks reviewed customization files using a default-deny allowlist.
 
-## Layout
+## Tracked files
 
-- `<skill-name>/`: installed custom skills and their supporting files.
-- `customizations/instructions/AGENTS.md`: reusable user-level working instructions.
-- `customizations/hooks.json`: portable Navi approval sound hook.
-- `customizations/config.example.toml`: selected preferences without local runtime state.
-- `customizations/scripts/`: optional setup helpers.
-- `customizations/sounds/`: audio sources and download instructions.
-- `customizations/rules/`, `examples/`, `templates/`: reviewed customization sources.
+- `skills/<name>/`: custom skills and their supporting files.
+- `skills/AGENTS.md`: skill maintenance and synchronization instructions.
+- `AGENTS.md`: user-level working instructions.
+- `hooks.json`: portable Navi approval sound hook.
+- `config.example.toml`: sanitized preference template.
+- `scripts/`: optional sound download helper.
+- `sounds/README.md`: audio sources; actual game audio stays local.
+- `rules/README.md`: guidance; local command grants stay private.
+- `examples/`, `templates/`: sanitized reusable customization sources.
 
-The checkout currently lives at `~/.codex/skills`, so existing skills stay installed without relocation. Do not move skill folders into a nested `skills/` directory here.
+Authentication, live `config.toml`, hook trust state, chat history, application databases, caches, managed skills, plugins, and computer-specific runtime files remain ignored. Add explicit allowlist entries for new skills and reviewed rules. Ignore rules do not erase historical commits.
 
-## Install on another computer
+## Setup
 
-Clone this repository into an empty `~/.codex/skills` directory. If that directory already exists, preserve it and copy only the desired skill folders instead.
+Clone into an empty Codex home directory only. If `~/.codex` already exists, clone elsewhere and review and merge desired files; preserve existing configuration and authentication.
 
-Review `customizations/instructions/AGENTS.md` before merging it into `~/.codex/AGENTS.md`. Merge selected settings from `customizations/config.example.toml` into your own configuration.
+Merge selected settings from `config.example.toml` into local `config.toml`. Review `AGENTS.md` and `hooks.json` before installing. The approval hook uses `CODEX_HOME`, falling back to `~/.codex`, and macOS `afplay`. Changed commands may require renewed hook trust in Codex.
 
-Download optional sounds:
+Download optional sounds without changing the hook:
 
 ```sh
-python3 customizations/scripts/download-sounds.py
+python3 scripts/download-sounds.py
 ```
 
-Review and merge `customizations/hooks.json` into `~/.codex/hooks.json`; preserve existing hooks. Enable or trust hooks through your Codex installation as required. The hook uses `CODEX_HOME`, falling back to `~/.codex`. Changing hook commands may require renewed trust. Playback uses macOS `afplay`.
+To use Metal Gear Solid, replace `navi-hey.mp3` with `metal-gear-solid-alert.mp3` in `hooks.json`.
 
-To select Metal Gear Solid, replace `navi-hey.mp3` with `metal-gear-solid-alert.mp3` in your local hook. This repository does not change active local hooks automatically.
+## Maintenance
 
-Install command approval rules only after reviewing each grant. Configure MCP services locally; generated computer-use paths and authentication are intentionally omitted.
-
-## Maintenance and privacy
-
-Edit custom skills in this checkout, follow the repository skill-review instructions, review changes, commit, and push to `origin`.
-
-Changes to live `~/.codex/hooks.json`, `AGENTS.md`, or configuration do not automatically update the reviewed repository copies. Export only sanitized changes into `customizations/`.
-
-The root ignore file allows only named skill folders and reviewed customization sources. Add an explicit allowlist entry when introducing a new skill. Authentication, chat history, application databases, caches, plugin packages, local approval grants, and game audio are excluded. Never copy the entire live `.codex` directory into this repository. Inspect staged changes before publishing; ignore rules do not remove tracked files or historical commits.
+Run Git commands from `~/.codex`. Follow `skills/AGENTS.md` for skill changes. Review staged content before committing and pushing. Never add ignored runtime files with `git add -f`.
