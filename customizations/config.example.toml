@@ -1,0 +1,6 @@
+# Merge preferences into your own config; do not overwrite generated settings.
+model = "gpt-6.1-sol"
+model_reasoning_effort = "low"
+
+# Keep credentials in environment variables or your credential manager.
+# Configure plugins and MCP services locally for each computer.

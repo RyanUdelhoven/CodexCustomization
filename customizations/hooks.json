@@ -1,0 +1,16 @@
+{
+  "description": "Play Navi Hey when Codex requests approval.",
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/afplay \"${CODEX_HOME:-$HOME/.codex}/sounds/navi-hey.mp3\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

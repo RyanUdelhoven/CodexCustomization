@@ -6,7 +6,7 @@ Apply `skill-deconfliction/SKILL.md` before finalizing custom skill creation or 
 
 ## GitHub synchronization
 
-After creating or changing any custom skill, or completing a deconfliction pass, commit the finalized task changes in this repository and push to `origin` (`git@github.com:Arkmer/codex_skills.git`). This is standing user authorization; required execution approvals still apply. One push after a coordinated task is sufficient.
+After creating or changing any custom skill, or completing a deconfliction pass, commit the finalized task changes in this repository and push to `origin` (`https://github.com/RyanUdelhoven/codex_customizations.git`). This is standing user authorization; required execution approvals still apply. One push after a coordinated task is sufficient.
 
 After validation and installation/finalization, review the diff and stage only finalized task changes, including relevant repository instructions. Preserve unrelated working-tree and staged changes; exclude them from the commit. Use a descriptive commit message. This policy applies to this custom skills repository, not application repositories or plugin-managed artifacts.
 
