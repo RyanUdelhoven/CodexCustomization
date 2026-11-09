@@ -8,6 +8,9 @@
 !/skills/
 /skills/*
 !/skills/AGENTS.md
+!/skills/analyze-youtube/
+!/skills/task-research/
+!/skills/cost-aware-options-review/
 !/skills/architecture-mapper/
 !/skills/code-change-verification/
 !/skills/context-audit/
@@ -15,6 +18,7 @@
 !/skills/decision-recorder/
 !/skills/dockerize-app/
 !/skills/docs-sync/
+!/skills/feature-branch/
 !/skills/focused-refactor/
 !/skills/handoff-writer/
 !/skills/local-port-manager/
