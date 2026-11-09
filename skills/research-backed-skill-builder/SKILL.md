@@ -11,6 +11,8 @@ Choose the requested deliverable first. For questions, return a sourced answer w
 
 Apply this research workflow alongside specialized skills when needed: research owns evidence gathering and synthesis; the specialized skill owns implementation, profiling, verification, or artifact creation. For OpenAI product and Codex guidance, use openai-docs for source selection and product facts. Do not independently repeat research already completed by another applicable workflow.
 
+For practical task-solution discovery and ranked options, use task-research to own framing, ordered preferences, and the comparison deliverable. This skill supplies evidence methods; reuse one research pass. Skill-authoring requests remain here rather than activating task-research merely because they involve research.
+
 ## Let the situation guide the work
 
 These situations trigger research even when the user does not say “research.” Combine applicable rows without repeating searches or deliverables. Use the requested output format; the outputs below describe useful content, not mandatory headings.
