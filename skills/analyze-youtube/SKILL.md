@@ -1,6 +1,6 @@
 ---
 name: analyze-youtube
-description: Analyze spoken content from YouTube links using captions or free local transcription, automatic promotion removal, temporary section analysis, and timestamped synthesis. Use when the user asks to summarize, critique, compare, understand, or extract lessons from a video.
+description: Analyze spoken content from YouTube links using captions or free local transcription, automatic promotion removal, temporary section analysis, and fact-checked synthesis. Use when the user asks to summarize, critique, compare, understand, or extract lessons from a video.
 ---
 
 # Analyze YouTube
@@ -27,13 +27,25 @@ Never show the user ad excerpts, sponsor names, or exclusion logs unless explici
 
 ## Analyze sections and synthesize
 
-Read all retained speech, then write a section outline using original segment IDs. Use available creator chapters as hints, not mandatory boundaries; otherwise infer sections from topic changes. Reference the cleaned transcript instead of duplicating it. Split long sections into manageable reading slices and consult neighbors for pronouns, qualifications, and transitions.
+Read all retained speech, then write a section outline using original segment IDs. Use available creator chapters as hints, not mandatory boundaries; otherwise infer sections from topic changes. Chapter metadata only guides the outline; do not retain a separate chapter artifact. Reference the cleaned transcript instead of duplicating it. Split long sections into manageable reading slices and consult neighbors for pronouns, qualifications, and transitions.
 
 Analyze each section against the user's question. Capture its role, claims, evidence/examples, assumptions, implications, and open questions where relevant. Cite original segment IDs in each section note. Save notes incrementally inside the run, then import the complete notes list with `notes`. The helper requires exactly one note per section and source evidence belonging to that section.
 
-Build the final understanding from the sections and their relationships: central thesis, argument progression, cross-section support or contradictions, practical lessons, and consequential gaps. Revisit raw/clean speech for uncertain interpretations rather than relying solely on summaries. Distinguish speaker claims, your interpretation, and independently verified facts. When used alongside research or implementation skills, this skill owns speech preparation and analysis; those skills own fact checking and their deliverables.
+Build the final understanding from the sections and their relationships: central thesis, argument progression, cross-section support or contradictions, practical lessons, and consequential gaps. Revisit raw/clean speech for uncertain interpretations rather than relying solely on summaries. Distinguish speaker claims, your interpretation, and independently verified facts. Fact checking is part of this workflow. When a research skill also applies, reuse its evidence gathering instead of repeating it; implementation skills own their implementation deliverables.
 
-Run `verify`; fix missing coverage before claiming full-video understanding. A truncated page, missed section, or unavailable speech limits the claim. Cite substantive points with `https://www.youtube.com/watch?v=VIDEO_ID&t=SECONDSs`. Flag uncertain names/numbers; do not infer unseen demonstrations or on-screen information from speech alone. Adapt response structure to the video and question; do not dump transcripts by default.
+Run `verify`; fix missing coverage before claiming full-video understanding. A truncated page, missed section, or unavailable speech limits the claim. Keep timestamps and segment IDs internal for evidence tracking; do not show timestamps or timestamped video links in the answer. Flag uncertain names/numbers; do not infer unseen demonstrations or on-screen information from speech alone. Use the output format below; do not dump transcripts by default.
+
+## Fact check and present the analysis
+
+Before finalizing, identify externally checkable factual claims in the analysis and verify them against suitable primary or authoritative sources. Open and inspect the supporting sources; search snippets and the speaker's assertion do not establish truth. Check dates, numbers, scope, and material qualifications. Verify claims as they applied at the video's date, and distinguish later developments when relevant. Do not turn opinions or your interpretations into facts. When sources conflict or verification fails, state the uncertainty instead of implying confirmation. If browsing is unavailable, disclose that fact checking remains incomplete. Reuse research already completed for the task.
+
+Begin with a short, direct paragraph stating the main takeaway and its implications. Do not label it “BLUF” or add a heading before it. Keep this opening within 30 words as well. Correct or qualify the video's thesis here when the evidence requires it.
+
+Organize the remaining answer under descriptive Markdown headers reflecting the video's chapters or main points. Each section starts with a summary of no more than 30 words. Optional supporting bullets must support that summary, with no more than 15 words per bullet. Keep qualifications and corrections within these limits; split points or create a relevant section instead of dropping essential nuance. Do not include timestamps, time ranges, segment IDs, or timestamp-bearing video URLs in user-facing output. Preserve those internally for accuracy.
+
+Attach short epistemic tags where a claim needs evidence or qualification. Use a single word in square brackets, hyperlinking that word directly to a supporting source: `[fact](SOURCE_URL)`, `[disputed](SOURCE_URL)`, or `[uncertain](SOURCE_URL)`. Choose the word to match the source's actual support; do not label an entire mixed paragraph as fact. Use multiple linked tags when multiple sources materially support a point. Tags and their URLs do not count toward any word limit. When a claim remains unverified and no supporting source exists, use `[unverified]` without inventing a link. Distinguish an inference in the prose or with `[inference](PREMISE_SOURCE_URL)`; a source supporting its premises does not independently verify the inference. Place tags next to the relevant claim, including in the opening when needed. Keep attribution concise and do not add a redundant source list.
+
+Before `finish`, check the opening, chapter/main-point headers, summary and bullet word limits, absence of visible timestamps and ads, and support for factual claims. A mechanical coverage check does not verify facts or enforce this prose format; Codex must perform these final checks.
 
 ## Keep the chat title relevant
 
