@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze YouTube"
+  short_description: "Analyze videos with automatic ad removal"
+  default_prompt: "Use $analyze-youtube to remove promotions automatically, analyze each section, and synthesize this video with timestamps."
