@@ -1,6 +1,6 @@
-# Codex customizations
+# CodexCustomization
 
-This Git repository is rooted at `~/.codex/`. It tracks reviewed customization files using a default-deny allowlist.
+The [CodexCustomization repository](https://github.com/RyanUdelhoven/CodexCustomization) is rooted locally at `~/.codex/`. It tracks reviewed customization files using a default-deny allowlist.
 
 ## Tracked files
 
