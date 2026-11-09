@@ -7,6 +7,8 @@ description: Finish an authorized Git branch merge by deleting the merged featur
 
 The user prefers deleting completed feature branches after successful merging and pushing. Treat cleanup as part of an authorized merge workflow; do not ask again solely to delete the merged branch. Follow execution permission requirements and explicit requests to retain a branch.
 
+Feature-branch owns branch preparation before repository edits. Switching to the merge target for authorized integration and cleanup is allowed; create or reuse a feature branch before further implementation.
+
 - Record the feature branch, target branch, source remote, and source tip before merging.
 - Let repository guidance and code-change-verification own checks; reuse valid verification results.
 - Complete the requested merge and push before cleanup. If pushing was not requested or otherwise authorized, do not infer authorization from this skill; retain the branch until publication is confirmed.
