@@ -1,11 +1,19 @@
 ---
 name: task-research
-description: Find how others solved a practical task and present evidence-backed options ranked by free use, existing capabilities, automation, and maintenance preferences. Use for task-solution discovery and ranked approach comparisons, rather than routine execution, simple lookups, or skill authoring itself.
+description: Research how others solved a practical task when the user is unsure how to proceed, asks an open-ended how-to question, encounters unfamiliar sources or constraints, or needs alternatives after a failed approach. Infer uncertainty from context without requiring explicit research or comparison language. Present evidence-backed options ranked by free use, existing capabilities, automation, and maintenance preferences. Exclude straightforward instructions with an established method, simple lookups, and skill authoring itself.
 ---
 
 # Research practical task solutions
 
 Find demonstrated ways to achieve the user's outcome, adapt them to their environment, and return ranked options before implementation. Research-only requests authorize research and comparison, not setup or execution. Continue authorized implementation when the user explicitly requests both.
+
+## Recognize uncertainty about the approach
+
+Activate when choosing a workable method is a meaningful part of the question, even without words like “research,” “options,” or “uncertain.” Treat open-ended “How can I…?”, “Where should I start?”, tentative proposals, unfamiliar or inconsistent inputs, missing standard integrations, and unsuccessful attempts as contextual signals. A request about importing data from varied, unusual sources qualifies when the extraction or integration approach remains unsettled.
+
+Distinguish uncertainty about which method will work from uncertainty about one step in an established method. “How do I parse a CSV in Python?” usually needs a direct answer. “How can I import records from PDFs, emails, and sites without exports?” calls for demonstrated approaches. “I tried CSV export, but several sources do not support it” can also trigger research during an authorized task. Consider the whole conversation rather than requiring particular phrases or treating every “how” as a survey.
+
+Use a focused research pass proportional to the unknown. Explain the approach choice briefly, surface the useful alternatives, and recommend a next step; do not require the user to request comparison explicitly. If existing evidence settles the choice, reuse it instead of restarting research. Preserve an explicitly chosen method and research only its unresolved parts unless alternatives are requested or it proves infeasible. When implementation is already authorized, use findings to continue that work within its scope.
 
 ## Scope and priorities
 
