@@ -25,8 +25,8 @@ The registry is embedded in the installed helper:
 | mynormal | `/Users/ryanudelhoven/development/projects/MyNormal` | RyanUdelhoven/MyNormal |
 | marketnuance | `/Users/ryanudelhoven/development/projects/MarketNuance` | RyanUdelhoven/MarketNuance |
 
-After reviewing the complete branch scope, running repository gates, and receiving
-merge/push authorization, run exactly:
+After reviewing the complete branch scope, running repository gates, and confirming
+explicit or applicable standing user merge/push authorization, run exactly:
 
 ```sh
 /Users/ryanudelhoven/.local/share/codex-publish/codex-git publish customization codex/example VERIFIED_CHAT_UUID

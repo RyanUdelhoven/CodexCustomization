@@ -2,7 +2,23 @@
 
 These instructions complement the executable `.rules` policy. They do not grant
 execution permissions. Apply them to authorized merge/push work in registered
-repositories; user requests supply publication authorization, not this document.
+repositories; user requests or applicable standing user instructions supply
+publication authorization, not this document.
+
+## Remote feature branches
+
+Keep implementation branches local unless the user requests a remote branch or
+the authorized task needs one for review, backup, or collaboration. A required
+push does not by itself require creating a remote feature branch; follow the
+authorized destination and lifecycle. Existing remote branches remain valid.
+
+For authorized merge and publication, delete only the completed task's remote
+feature branch after verifying successful integration and target publication.
+Confirm its tip still matches the merged source; use the protected publisher's
+exact-tip lease in registered workflows. Preserve primary/default branches,
+merge targets, unrelated or unmerged work, changed remote tips, and explicitly
+retained branches. Keep raw `git push` commands, including remote deletion,
+prompted; do not broadly allow deletion of every non-primary branch.
 
 ## Preparation and inspection
 
