@@ -47,3 +47,10 @@ codex execpolicy check --pretty \
   --rules /Users/ryanudelhoven/.codex/rules/terminal-read.rules \
   -- node -e 'console.log("review required")'
 ```
+
+## Merge and push
+
+`git-workflow.rules` is the canonical reviewed Git policy. Raw pushes and branch
+operations retain approval prompts. The protected publish helper provides the
+validated route without repeated shell approvals; see [publish helper](publish-helper.md).
+Do not whitelist its writable source or its installer. Restart Codex after installation.

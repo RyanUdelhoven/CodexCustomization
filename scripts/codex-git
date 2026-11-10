@@ -1,0 +1,165 @@
+#!/usr/bin/python3 -I
+"""Bounded publication for registered local repositories. No arbitrary Git arguments."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+HOME = Path('/Users/ryanudelhoven')
+REPOS = {
+    'customization': (HOME / '.codex', 'CodexCustomization'),
+    'mynormal': (HOME / 'development/projects/MyNormal', 'MyNormal'),
+    'marketnuance': (HOME / 'development/projects/MarketNuance', 'MarketNuance'),
+}
+INSTALL = HOME / '.local/share/codex-publish'
+ENV = {'PATH': '/usr/bin:/bin', 'HOME': str(HOME), 'GIT_TERMINAL_PROMPT': '0',
+       'GIT_CONFIG_NOSYSTEM': '1', 'GIT_CONFIG_GLOBAL': '/dev/null',
+       'GIT_CONFIG_COUNT': '0', 'GIT_NO_REPLACE_OBJECTS': '1'}
+
+
+def run(args, cwd, check=True):
+    result = subprocess.run(args, cwd=cwd, env=ENV, text=True, capture_output=True)
+    if check and result.returncode:
+        raise ValueError(result.stderr.strip() or result.stdout.strip() or 'Command failed')
+    return result
+
+
+class Publisher:
+    def __init__(self, repo, url):
+        self.repo, self.url = Path(repo).resolve(), url
+
+    def git(self, *args, check=True):
+        # Override repository execution hooks, transport rewrites, and credential commands.
+        return run(['/usr/bin/git', '-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false',
+                    '-c', 'credential.helper=', '-c', 'credential.helper=!/usr/local/bin/gh auth git-credential',
+                    '-c', 'credential.https://github.com.helper=',
+                    '-c', 'credential.https://github.com.helper=!/usr/local/bin/gh auth git-credential',
+                    '-c', 'protocol.allow=never', '-c', 'protocol.https.allow=always',
+                    '-C', str(self.repo), *args], self.repo, check).stdout.strip()
+
+    def validate(self):
+        if Path(self.git('rev-parse', '--show-toplevel')).resolve() != self.repo:
+            raise ValueError('Registered checkout does not match repository root')
+        # URL rewriting can redirect even an explicit HTTPS destination.
+        config = self.git('config', '--local', '--no-includes', '--get-regexp',
+                          r'^(url\..*\.(insteadof|pushinsteadof)|include.*|core\.sshcommand|core\.gitproxy)$',
+                          check=False)
+        if config:
+            raise ValueError('Transport rewrites/includes require manual review')
+        for args in [('remote', 'get-url', '--all', 'origin'),
+                     ('remote', 'get-url', '--push', '--all', 'origin')]:
+            if self.git(*args).splitlines() != [self.url]:
+                raise ValueError('Origin must have exactly the registered HTTPS destination')
+        if self.git('symbolic-ref', 'refs/remotes/origin/HEAD') != 'refs/remotes/origin/main':
+            raise ValueError('Registered workflow requires origin default branch main')
+        if self.git('status', '--porcelain', '--untracked-files=all'):
+            raise ValueError('Working tree must be clean, including untracked files')
+        gitdir = Path(self.git('rev-parse', '--absolute-git-dir'))
+        if any((gitdir / name).exists() for name in
+               ['MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'rebase-apply', 'rebase-merge']):
+            raise ValueError('Finish the in-progress Git operation first')
+
+    def remote_tip(self, ref):
+        rows = self.git('ls-remote', '--refs', self.url, ref).splitlines()
+        if not rows:
+            return None
+        if len(rows) != 1 or rows[0].split()[1] != ref:
+            raise ValueError('Ambiguous remote ref')
+        return rows[0].split()[0]
+
+    def tracking(self, action, branch, chat):
+        args = ['/usr/bin/python3', '-I', str(INSTALL / 'branch_chats.py'), action,
+                '--repo', str(self.repo), '--branch', branch]
+        if action == 'register':
+            args += ['--chat-id', chat, '--source', 'codex', '--host-id', 'local']
+        return json.loads(run(args, self.repo).stdout)
+
+    def receipt_path(self, branch):
+        common = Path(self.git('rev-parse', '--path-format=absolute', '--git-common-dir'))
+        return common / 'codex-publish' / (hashlib.sha256(branch.encode()).hexdigest() + '.json')
+
+    def publish(self, branch, chat):
+        self.validate()
+        current = self.git('symbolic-ref', '--short', 'HEAD')
+        if current not in (branch, 'main'):
+            raise ValueError('Checkout must be on the requested feature branch or main')
+        source = self.git('rev-parse', '--verify', 'refs/heads/' + branch)
+        # Check other worktrees before any mutation; never disturb their checked-out branches.
+        worktrees = self.git('worktree', 'list', '--porcelain').split('\n\n')
+        for block in worktrees:
+            lines = block.splitlines()
+            if any(line in ('branch refs/heads/main', 'branch refs/heads/' + branch) for line in lines):
+                location = next(line[9:] for line in lines if line.startswith('worktree '))
+                if Path(location).resolve() != self.repo:
+                    raise ValueError('A participating branch is checked out in another worktree')
+        default = self.git('ls-remote', '--symref', self.url, 'HEAD')
+        if 'ref: refs/heads/main\tHEAD' not in default.splitlines():
+            raise ValueError('Remote default branch must be main')
+        self.git('fetch', '--no-tags', self.url, 'refs/heads/main')
+        remote = self.git('rev-parse', 'FETCH_HEAD')
+        main = self.git('rev-parse', 'refs/heads/main')
+        # A fast-forward workflow refuses divergence or unrelated local main commits.
+        self.git('merge-base', '--is-ancestor', main, remote)
+        self.git('merge-base', '--is-ancestor', remote, source)
+        tracking = self.tracking('register', branch, chat)
+        self.git('switch', 'main')
+        self.git('merge', '--ff-only', source)
+        self.git('push', '--porcelain', self.url, 'refs/heads/main:refs/heads/main')
+        published = self.git('rev-parse', 'refs/heads/main')
+        if self.remote_tip('refs/heads/main') != published:
+            raise ValueError('Remote moved or verification failed; preserve branches and inspect manually')
+        receipt = {'branch': branch, 'source': source, 'published': published, 'chat': chat,
+                   'tracking': tracking, 'cleanup': []}
+        remote_feature = self.remote_tip('refs/heads/' + branch)
+        if remote_feature == source:
+            # Lease makes deletion conditional on the exact merged tip, including concurrent updates.
+            self.git('push', '--porcelain', '--force-with-lease=refs/heads/' + branch + ':' + source,
+                     self.url, ':refs/heads/' + branch)
+            receipt['cleanup'].append('remote feature deleted')
+        elif remote_feature:
+            receipt['cleanup'].append('remote feature retained: tip differs; skip archival')
+        self.git('branch', '-d', '--', branch)
+        receipt['cleanup'].append('local feature deleted')
+        path = self.receipt_path(branch)
+        path.parent.mkdir(exist_ok=True)
+        path.write_text(json.dumps(receipt, indent=2) + '\n')
+        return receipt
+
+    def finish(self, branch, chat):
+        path = self.receipt_path(branch)
+        receipt = json.loads(path.read_text())
+        if receipt['branch'] != branch or receipt['chat'] != chat:
+            raise ValueError('Publication receipt belongs to another branch/chat')
+        current = self.tracking('inspect', branch, chat)
+        if current['record']['id'] != receipt['tracking']['record']['id']:
+            raise ValueError('Lifecycle changed; do not close a newer lifecycle')
+        result = self.tracking('close', branch, chat)
+        return {'closed': True, 'tracking': result}
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=['publish', 'finish'])
+    parser.add_argument('repository', choices=sorted(REPOS))
+    parser.add_argument('branch')
+    parser.add_argument('chat_id')
+    args = parser.parse_args(argv)
+    if not re.fullmatch(r'codex/[a-z0-9]+(?:[-/][a-z0-9]+)*', args.branch):
+        parser.error('Only codex/ feature branches with lowercase letters and digits are accepted')
+    if not re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', args.chat_id):
+        parser.error('Supply the verified Codex chat UUID')
+    repo, name = REPOS[args.repository]
+    publisher = Publisher(repo, 'https://github.com/RyanUdelhoven/' + name + '.git')
+    result = getattr(publisher, args.action)(args.branch, args.chat_id)
+    print(json.dumps(result, indent=2))
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as error:
+        sys.exit('Publication stopped; inspect current state before retrying: ' + str(error))

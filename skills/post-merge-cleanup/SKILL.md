@@ -20,6 +20,14 @@ Feature-branch owns branch preparation before repository edits. Switching to the
 
 Before integration, inspect all commits and uncommitted changes in the requested scope. A request to merge a branch covers its unmerged commits unless the user narrows it. Do not silently substitute selected cherry-picks for a branch merge. If inherited work materially expands the understood task, explain the difference and resolve scope before integration. Commit reviewed local edits when the user includes them; preserve anything excluded.
 
+## Registered local publish helper
+
+For Ryan's registered `customization`, `mynormal`, and `marketnuance` repositories, prefer the protected executable `/Users/ryanudelhoven/.local/share/codex-publish/codex-git` after explicit merge/push authorization and completed verification. See [publish helper](../../rules/publish-helper.md) for exact arguments and limits. Do not execute the writable source copy as an approved shortcut.
+
+Run `publish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` as one direct command. It registers the integrating chat, checks the checkout and destination, fast-forwards main, publishes, verifies the remote commit, and removes only the completed feature branches. Reuse its receipt instead of repeating these mutations or Python tracking calls. It refuses divergence; integrate remote changes on the feature branch and repeat required verification before retrying. Other failures require inspecting the reported current state; never force-push or bypass its checks.
+
+The receipt preserves participation evidence. This skill still owns app-history checks, the archive decision, and the app archival call. A retained remote branch or any incomplete cleanup keeps the chat open. After the decision and any archive attempt, run `finish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` to close the recorded lifecycle. Never close it before the archive decision. The helper does not archive chats or authorize publication. For unregistered repositories or incompatible workflows, follow the ordinary steps above and normal execution approvals.
+
 ## Archive the completed chat
 
 Inspect and retain the participation record before deleting branches.

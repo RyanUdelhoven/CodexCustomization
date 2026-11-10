@@ -97,6 +97,11 @@ class InstalledPolicyTests(unittest.TestCase):
         cases = [(rule["pattern"], rule["decision"]) for rule in definitions]
         cases.extend([
             (["git", "push", "origin", "main"], "prompt"),
+            (["git", "push", "origin", "main", "--force"], "prompt"),
+            (["git", "-C", str(ROOT), "push", "origin", "main"], "prompt"),
+            (["git", "branch", "-d", "main"], "forbidden"),
+            (["/Users/ryanudelhoven/.local/share/codex-publish/codex-git", "publish",
+              "mynormal", "codex/example", "invalid-id", "--force"], "allow"),
             (["git", "remote", "remove", "origin"], "forbidden"),
             (["node", "-e", "require('fs').writeFileSync('/tmp/never-run', '')"], "prompt"),
             (["sed", "-n", "1p;w /tmp/never-run", "README.md"], "prompt"),
