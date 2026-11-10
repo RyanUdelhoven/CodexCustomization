@@ -12,9 +12,13 @@ the authorized task needs one for review, backup, or collaboration. A required
 push does not by itself require creating a remote feature branch; follow the
 authorized destination and lifecycle. Existing remote branches remain valid.
 
-For authorized merge and publication, delete only the completed task's remote
-feature branch after verifying successful integration and target publication.
-Confirm its tip still matches the merged source; use the protected publisher's
+A request to merge a feature branch also authorizes and requires automatic
+removal of that completed feature branch locally and on its source remote, if
+present. Do not wait for a separate cleanup request or conversational confirmation.
+Perform cleanup after verifying successful integration and target publication;
+if publication is not authorized or cannot be verified, retain the branches and
+report cleanup as pending. This does not independently authorize a target push.
+Confirm the remote feature tip still matches the merged source; use the protected publisher's
 exact-tip lease in registered workflows. Preserve primary/default branches,
 merge targets, unrelated or unmerged work, changed remote tips, and explicitly
 retained branches. Keep raw `git push` commands, including remote deletion,

@@ -5,7 +5,7 @@ description: Finish an authorized merge with local and remote branch cleanup, th
 
 # Post-merge cleanup
 
-The user prefers deleting completed feature branches after successful merging and pushing. Treat cleanup as part of an authorized merge workflow; do not ask again solely to delete the merged branch. Follow execution permission requirements and explicit requests to retain a branch.
+A merge request automatically authorizes and requires deleting the completed feature branch both locally and on its source remote, if present. Complete cleanup within the merge workflow after verifying successful integration and target publication; do not wait for a separate cleanup request or conversational confirmation. Keep execution permission requirements and explicit requests to retain a branch. If cleanup cannot safely complete, report the retained branch and concrete blocker rather than treating the merge workflow as fully complete.
 
 Feature-branch owns branch preparation before repository edits. Switching to the merge target for authorized integration and cleanup is allowed; create or reuse a feature branch before further implementation.
 
