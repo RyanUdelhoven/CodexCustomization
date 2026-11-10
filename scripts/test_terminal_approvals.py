@@ -96,6 +96,8 @@ class InstalledPolicyTests(unittest.TestCase):
             rules.extend(["--rules", str(path)])
         cases = [(rule["pattern"], rule["decision"]) for rule in definitions]
         cases.extend([
+            (["/usr/bin/install", "-m", "555", str(ROOT / "scripts/codex-git"),
+              "/Users/ryanudelhoven/.local/share/codex-publish/codex-git"], "prompt"),
             (["git", "push", "origin", "main"], "prompt"),
             (["git", "push", "origin", "main", "--force"], "prompt"),
             (["git", "-C", str(ROOT), "push", "origin", "main"], "prompt"),

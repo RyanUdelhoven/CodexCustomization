@@ -34,7 +34,7 @@ class Publisher:
 
     def git(self, *args, check=True):
         # Override repository execution hooks, transport rewrites, and credential commands.
-        return run(['/usr/bin/git', '-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false',
+        return run(['/usr/bin/git', '-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false', '-c', 'submodule.recurse=false',
                     '-c', 'credential.helper=', '-c', 'credential.helper=!/usr/local/bin/gh auth git-credential',
                     '-c', 'credential.https://github.com.helper=',
                     '-c', 'credential.https://github.com.helper=!/usr/local/bin/gh auth git-credential',
@@ -46,10 +46,10 @@ class Publisher:
             raise ValueError('Registered checkout does not match repository root')
         # URL rewriting can redirect even an explicit HTTPS destination.
         config = self.git('config', '--local', '--no-includes', '--get-regexp',
-                          r'^(url\..*\.(insteadof|pushinsteadof)|include.*|core\.sshcommand|core\.gitproxy)$',
+                          r'^(url\..*\.(insteadof|pushinsteadof)|include.*|credential\..*helper|filter\..*|remote\..*\.(vcs|proxy)|core\.sshcommand|core\.gitproxy)$',
                           check=False)
         if config:
-            raise ValueError('Transport rewrites/includes require manual review')
+            raise ValueError('Transport rewrites, executable config, or includes require manual review')
         for args in [('remote', 'get-url', '--all', 'origin'),
                      ('remote', 'get-url', '--push', '--all', 'origin')]:
             if self.git(*args).splitlines() != [self.url]:

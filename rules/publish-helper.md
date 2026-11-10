@@ -27,7 +27,7 @@ Supply the current verified Codex chat UUID. The workflow currently supports loc
 Codex chats and main as the verified remote default branch. It rejects extra
 arguments, arbitrary repositories, primary-branch deletion, dirty checkouts,
 in-progress operations, participating branches in other worktrees, unexpected
-origin destinations, and URL rewrites/config includes. It fetches main directly
+origin destinations, URL rewrites/config includes, and repository credential or filter commands. It fetches main directly
 from the fixed HTTPS destination, requires local main to be contained in remote
 main and remote main to be contained in the feature tip, and fast-forwards main.
 Divergence stops before switching branches; update the feature branch normally

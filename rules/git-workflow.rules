@@ -116,3 +116,6 @@ prefix_rule(pattern=["git", "-C", "/tmp/codex-task-research-merge", "branch", "-
 prefix_rule(pattern=["git", "-C", "/tmp/codex-task-research-merge", "branch", "-D", "main"], decision="forbidden")
 prefix_rule(pattern=["git", "-C", "/tmp/codex-task-research-merge", "branch", "--delete", "main"], decision="forbidden")
 prefix_rule(pattern=["/Users/ryanudelhoven/.local/share/codex-publish/codex-git"], decision="allow")
+
+# Installing a new approved executable must remain reviewed.
+prefix_rule(pattern=["/usr/bin/install", "-m", "555", "/Users/ryanudelhoven/.codex/scripts/codex-git", "/Users/ryanudelhoven/.local/share/codex-publish/codex-git"], decision="prompt")

@@ -92,6 +92,14 @@ class PublicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'rewrites'):
             self.publisher.validate()
 
+    def test_repository_execution_config_rejected(self):
+        for key in ['credential.https://github.com/RyanUdelhoven.helper', 'filter.example.smudge']:
+            with self.subTest(key=key):
+                git('config', key, '!unreviewed-command', cwd=self.repo)
+                with self.assertRaisesRegex(ValueError, 'executable config'):
+                    self.publisher.validate()
+                git('config', '--unset', key, cwd=self.repo)
+
     def test_divergence_preserves_branches(self):
         git('switch', 'main', cwd=self.repo)
         (self.repo / 'other').write_text('diverged')
