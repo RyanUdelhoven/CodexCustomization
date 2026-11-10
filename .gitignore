@@ -50,6 +50,7 @@
 !/rules/
 /rules/*
 !/rules/README.md
+!/rules/terminal-read.rules
 
 # Secrets and generated files inside allowed directories.
 **/.git

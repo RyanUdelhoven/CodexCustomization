@@ -1,3 +1,49 @@
 # Command approval rules
 
 Add reviewed, narrowly scoped `.rules` files here. No existing local approval grants are exported automatically. Review and explicitly install rules on each computer.
+
+`terminal-read.rules` contains the terminal allowances reviewed on November 9, 2026.
+It is installed in this checkout. Restart Codex to load changed rules.
+The absolute helper and interpreter paths target Ryan's Mac; review those paths
+before installing elsewhere. Rules apply to outside-sandbox requests, not every
+command executed inside the sandbox. Existing Git rules remain separate.
+
+Basic readers and selected diagnostic prefixes run without approval. Raw `rg`,
+`sed`, `find`, `curl`, and `date` require approval outside the sandbox because
+prefix matching cannot validate all their arguments. Use the executable helper:
+
+```sh
+/Users/ryanudelhoven/.codex/scripts/codex-read search --glob '*.py' 'def main' scripts
+/Users/ryanudelhoven/.codex/scripts/codex-read lines README.md 1 30
+/Users/ryanudelhoven/.codex/scripts/codex-read files scripts --name '*.py' --max-depth 3
+/Users/ryanudelhoven/.codex/scripts/codex-read health http://mynormal.localhost:18080/health
+/Users/ryanudelhoven/.codex/scripts/codex-read now
+/Users/ryanudelhoven/.codex/scripts/codex-read arm64
+```
+
+The helper rejects arbitrary tool flags. Search invokes the bundled ripgrep with
+configuration disabled and a minimal environment. File discovery does not follow
+directory symlinks. Health checks only perform GET `/health` against the hosts and
+ports listed in the helper, connect directly to loopback, and never follow redirects.
+Time uses Python's clock reader rather than the system date-setting command.
+The hardware check uses fixed sysctl arguments; a raw sysctl prefix would permit
+additional operands that set values, so raw sysctl requires approval too.
+
+Python, Ruby, shell invocations, observed Node execution forms, tests, file
+mutations, container execution, service changes, API calls, and extraction require
+approval outside the sandbox. Existing grants for these prefixes are overridden
+by the more restrictive prompt decision. Other previously approved categories,
+including Git and `npm run build`, remain governed by their existing rules.
+Unlisted Node scripts and reordered flags receive no new allowance. Prefix rules
+are not a complete executable or argument firewall; alternate paths and spellings
+may receive no match and fall back to the normal approval policy.
+
+Check all installed rules without executing a candidate command:
+
+```sh
+codex execpolicy check --pretty \
+  --rules /Users/ryanudelhoven/.codex/rules/default.rules \
+  --rules /Users/ryanudelhoven/.codex/rules/git-workflow.rules \
+  --rules /Users/ryanudelhoven/.codex/rules/terminal-read.rules \
+  -- node -e 'console.log("review required")'
+```

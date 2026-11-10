@@ -1,0 +1,121 @@
+#!/usr/bin/python3 -I
+"""Restricted read operations for use with Codex command approval rules."""
+import argparse
+import datetime
+import fnmatch
+import http.client
+import os
+from pathlib import Path
+import subprocess
+import sys
+from urllib.parse import urlsplit
+
+RG = "/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path/rg"
+HEALTH_TARGETS = {
+    ("localhost", 3000), ("127.0.0.1", 3000),
+    ("localhost", 18080), ("127.0.0.1", 18080),
+    ("127.0.0.1", 8766),
+    ("bodyledger.localhost", 18080), ("mynormal.localhost", 18080),
+    ("marketnuance.localhost", 18080), ("noodle-analytics.localhost", 18080),
+}
+
+
+def health_target(value):
+    url = urlsplit(value)
+    if (url.scheme != "http" or url.username is not None or url.password is not None
+            or url.query or url.fragment or url.path != "/health"
+            or (url.hostname, url.port) not in HEALTH_TARGETS):
+        raise ValueError("Use an approved local http://host:port/health URL")
+    return url
+
+
+def health(value):
+    url = health_target(value)
+    # Connect directly to loopback: no proxies, DNS, redirects, or curl configuration.
+    connection = http.client.HTTPConnection("127.0.0.1", url.port, timeout=10)
+    try:
+        connection.request("GET", "/health", headers={"Host": url.netloc})
+        response = connection.getresponse()
+        print("HTTP", response.status)
+        print(response.read(65536).decode("utf-8", errors="replace"))
+        return 0 if 200 <= response.status < 300 else 1
+    finally:
+        connection.close()
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest="operation", required=True)
+    search = sub.add_parser("search", help="Search using a fixed, configuration-free rg invocation")
+    search.add_argument("--ignore-case", action="store_true")
+    search.add_argument("--hidden", action="store_true")
+    search.add_argument("--glob", action="append", default=[])
+    search.add_argument("pattern")
+    search.add_argument("paths", nargs="+", type=Path)
+    lines = sub.add_parser("lines", help="Print an inclusive range of numbered lines")
+    lines.add_argument("path", type=Path)
+    lines.add_argument("start", type=int)
+    lines.add_argument("end", type=int)
+    files = sub.add_parser("files", help="Find names without following directory symlinks")
+    files.add_argument("root", type=Path)
+    files.add_argument("--name", default="*")
+    files.add_argument("--max-depth", type=int, default=5)
+    sub.add_parser("now", help="Print UTC and local time without setting the clock")
+    sub.add_parser("arm64", help="Read the Apple Silicon capability with fixed sysctl arguments")
+    check = sub.add_parser("health", help="GET /health from an approved loopback service")
+    check.add_argument("url")
+    args = parser.parse_args(argv)
+    try:
+        if args.operation == "search":
+            command = [RG, "--no-config", "--color=never", "--line-number"]
+            if args.ignore_case:
+                command.append("--ignore-case")
+            if args.hidden:
+                command.append("--hidden")
+            for glob in args.glob:
+                command.extend(["--glob", glob])
+            command.extend(["--regexp", args.pattern, "--"])
+            command.extend(str(path.resolve()) for path in args.paths)
+            return subprocess.run(command, env={"PATH": "/usr/bin:/bin"}, check=False).returncode
+        if args.operation == "lines":
+            if not 1 <= args.start <= args.end:
+                parser.error("Require 1 <= start <= end")
+            with args.path.open(encoding="utf-8", errors="replace") as source:
+                for number, line in enumerate(source, 1):
+                    if number > args.end:
+                        break
+                    if number >= args.start:
+                        print("{}: {}".format(number, line), end="")
+        elif args.operation == "files":
+            if not 0 <= args.max_depth <= 100:
+                parser.error("Require 0 <= max-depth <= 100")
+            root = args.root.resolve(strict=True)
+            if not root.is_dir():
+                parser.error("root must be a directory")
+            def failed(error):
+                raise error
+            for directory, directories, filenames in os.walk(root, followlinks=False, onerror=failed):
+                depth = len(Path(directory).relative_to(root).parts)
+                if depth >= args.max_depth:
+                    directories[:] = []
+                    continue
+                for name in sorted(directories + filenames):
+                    if fnmatch.fnmatchcase(name, args.name):
+                        print(Path(directory) / name)
+        elif args.operation == "now":
+            now = datetime.datetime.now(datetime.timezone.utc)
+            print("UTC:", now.isoformat())
+            print("Local:", now.astimezone().isoformat())
+        elif args.operation == "arm64":
+            return subprocess.run(["/usr/sbin/sysctl", "-n", "hw.optional.arm64"],
+                                  env={"PATH": "/usr/bin:/bin"}, check=False).returncode
+        elif args.operation == "health":
+            return health(args.url)
+    except (OSError, ValueError, http.client.HTTPException) as error:
+        print(str(error), file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
