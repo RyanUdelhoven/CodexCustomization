@@ -64,6 +64,22 @@ class PublicationTests(unittest.TestCase):
         self.assertFalse(receipt['tracking']['single_chat_candidate'])
         self.assertTrue(self.publisher.finish('codex/example', CHAT)['closed'])
 
+    def test_inspect_preserves_refs_files_and_tracking(self):
+        before = git('show-ref', cwd=self.repo)
+        result = self.publisher.inspect('codex/example', CHAT)
+        self.assertEqual(result['branch'], 'codex/example')
+        self.assertIn('feature', result['commits'])
+        self.assertIn('file', result['changes'])
+        self.assertEqual(git('show-ref', cwd=self.repo), before)
+        self.assertEqual(git('status', '--porcelain', cwd=self.repo), '')
+        self.assertFalse((self.repo / '.git/codex-branch-chats').exists())
+
+    def test_register_does_not_claim_creation_or_publish(self):
+        before = git('rev-parse', 'main', cwd=self.remote)
+        result = self.publisher.register('codex/example', CHAT)
+        self.assertFalse(result['single_chat_candidate'])
+        self.assertEqual(git('rev-parse', 'main', cwd=self.remote), before)
+
     def test_push_failure_preserves_feature_and_tracking(self):
         before = git('rev-parse', 'main', cwd=self.remote)
         original = self.publisher.git

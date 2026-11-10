@@ -82,6 +82,26 @@ class Publisher:
         common = Path(self.git('rev-parse', '--path-format=absolute', '--git-common-dir'))
         return common / 'codex-publish' / (hashlib.sha256(branch.encode()).hexdigest() + '.json')
 
+    def inspect(self, branch, chat):
+        """Local preflight without fetches, project commands, or tracking mutations."""
+        # Reject executable repository settings before inspecting commit contents.
+        self.validate()
+        return {
+            'branch': self.git('rev-parse', '--abbrev-ref', 'HEAD'),
+            'head': self.git('rev-parse', 'HEAD'),
+            'feature': self.git('rev-parse', '--verify', 'refs/heads/' + branch),
+            'commits': self.git('log', '--oneline', 'main..' + branch),
+            'changes': self.git('diff', '--no-ext-diff', '--no-textconv', '--stat', 'main...' + branch),
+            'worktrees': self.git('worktree', 'list', '--porcelain'),
+            'tracking': self.tracking('inspect', branch, chat),
+            'remote_state': 'not refreshed; publish checks the live destination',
+        }
+
+    def register(self, branch, chat):
+        self.validate()
+        self.git('rev-parse', '--verify', 'refs/heads/' + branch)
+        return self.tracking('register', branch, chat)
+
     def publish(self, branch, chat):
         self.validate()
         current = self.git('symbolic-ref', '--short', 'HEAD')
@@ -143,7 +163,7 @@ class Publisher:
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['publish', 'finish'])
+    parser.add_argument('action', choices=['inspect', 'register', 'publish', 'finish'])
     parser.add_argument('repository', choices=sorted(REPOS))
     parser.add_argument('branch')
     parser.add_argument('chat_id')

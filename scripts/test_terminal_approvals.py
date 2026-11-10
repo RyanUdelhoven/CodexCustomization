@@ -112,13 +112,39 @@ class InstalledPolicyTests(unittest.TestCase):
             (["curl", "-fsS", "http://marketnuance.localhost:18080/", "--upload-file", "secret"], "prompt"),
             (["date", "110912002026"], "prompt"),
             (["/usr/sbin/sysctl", "-n", "hw.optional.arm64", "kern.maxfiles=99999"], "prompt"),
-            ([str(ROOT / "scripts/codex-read"), "now"], "allow"),
+            ([str(ROOT / "scripts/codex-read"), "now"], "prompt"),
+            (["/Users/ryanudelhoven/.local/share/codex-publish/codex-read", "now"], "allow"),
+            (["git", "branch", "--show-current"], "prompt"),
+            (["git", "rev-parse", "--abbrev-ref", "HEAD"], "allow"),
         ])
         for command, expected in cases:
             with self.subTest(command=command):
                 result = subprocess.run([CODEX, "execpolicy", "check", *rules, "--", *command],
                                         check=True, capture_output=True, text=True)
                 self.assertEqual(json.loads(result.stdout)["decision"], expected)
+
+    def test_merge_preflight_and_lifecycle_commands(self):
+        rules = [item for path in sorted((ROOT / 'rules').glob('*.rules'))
+                 for item in ('--rules', str(path))]
+        protected = '/Users/ryanudelhoven/.local/share/codex-publish/'
+        commands = [
+            ['cat', 'skills/post-merge-cleanup/SKILL.md', 'rules/merge-push.md'],
+            ['git', 'status', '--short'],
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+            ['git', 'log', '--oneline', 'main..HEAD'],
+            ['git', 'diff', '--stat', 'main..HEAD'],
+            [protected + 'codex-read', 'search', 'merge', 'skills'],
+            [protected + 'codex-read', 'lines', 'README.md', '1', '30'],
+            [protected + 'codex-read', 'files', 'scripts'],
+        ]
+        commands += [[protected + 'codex-git', action, 'customization',
+                      'codex/example', '00000000-0000-0000-0000-000000000000']
+                     for action in ['inspect', 'register', 'publish', 'finish']]
+        for command in commands:
+            with self.subTest(command=command):
+                output = subprocess.check_output(
+                    [CODEX, 'execpolicy', 'check', *rules, '--', *command], text=True)
+                self.assertEqual(json.loads(output)['decision'], 'allow')
 
 
 if __name__ == "__main__":

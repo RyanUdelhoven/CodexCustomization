@@ -1,3 +1,9 @@
+## Merge and push execution
+
+For merge/push requests, follow [the execution rules](rules/merge-push.md) before
+running preflight commands. Use protected helpers and separate direct reads;
+do not introduce prompted raw commands into an otherwise approved workflow.
+
 ## Writing style
 
 - Use active voice.

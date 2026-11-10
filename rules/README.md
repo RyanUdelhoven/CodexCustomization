@@ -1,5 +1,9 @@
 # Command approval rules
 
+For merge and push requests, follow [the required execution rules](merge-push.md).
+`.rules` files enforce command decisions; that document specifies which approved
+commands agents must use throughout preparation, verification, publication, and cleanup.
+
 Add reviewed, narrowly scoped `.rules` files here. No existing local approval grants are exported automatically. Review and explicitly install rules on each computer.
 
 `terminal-read.rules` contains the terminal allowances reviewed on November 9, 2026.
@@ -13,18 +17,22 @@ Basic readers and selected diagnostic prefixes run without approval. Raw `rg`,
 prefix matching cannot validate all their arguments. Use the executable helper:
 
 ```sh
-/Users/ryanudelhoven/.codex/scripts/codex-read search --glob '*.py' 'def main' scripts
-/Users/ryanudelhoven/.codex/scripts/codex-read lines README.md 1 30
-/Users/ryanudelhoven/.codex/scripts/codex-read files scripts --name '*.py' --max-depth 3
-/Users/ryanudelhoven/.codex/scripts/codex-read health http://mynormal.localhost:18080/health
-/Users/ryanudelhoven/.codex/scripts/codex-read now
-/Users/ryanudelhoven/.codex/scripts/codex-read arm64
+/Users/ryanudelhoven/.local/share/codex-publish/codex-read search --glob '*.py' 'def main' scripts
+/Users/ryanudelhoven/.local/share/codex-publish/codex-read lines README.md 1 30
+/Users/ryanudelhoven/.local/share/codex-publish/codex-read files scripts --name '*.py' --max-depth 3
+/Users/ryanudelhoven/.local/share/codex-publish/codex-read health http://mynormal.localhost:18080/health
+/Users/ryanudelhoven/.local/share/codex-publish/codex-read now
+/Users/ryanudelhoven/.local/share/codex-publish/codex-read arm64
 ```
 
 The helper rejects arbitrary tool flags. Search invokes the bundled ripgrep with
 configuration disabled and a minimal environment. File discovery does not follow
 directory symlinks. Health checks only perform GET `/health` against the hosts and
 ports listed in the helper, connect directly to loopback, and never follow redirects.
+The reviewed executable must be installed outside agent-writable workspaces.
+Its writable source at `scripts/codex-read` retains an explicit prompt rule,
+overriding historical allow grants. Installing or updating the protected copy
+requires approval; the rule never approves a general installer or interpreter.
 Time uses Python's clock reader rather than the system date-setting command.
 The hardware check uses fixed sysctl arguments; a raw sysctl prefix would permit
 additional operands that set values, so raw sysctl requires approval too.

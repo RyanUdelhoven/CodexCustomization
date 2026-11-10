@@ -1,6 +1,6 @@
 # Reviewed terminal allowances and approval boundaries, 2026-11-09.
 # Rules govern outside-sandbox requests; they do not replace the sandbox.
-# Use scripts/codex-read for restricted search, ranges, discovery, health, and time.
+# Use the protected installed codex-read for restricted read operations.
 # More restrictive prompt rules intentionally override older exact allow grants.
 
 prefix_rule(pattern=["ls"], decision="allow")
@@ -25,7 +25,8 @@ prefix_rule(pattern=["sysctl"], decision="prompt", justification="Additional sys
 prefix_rule(pattern=["docker", "ps"], decision="allow")
 prefix_rule(pattern=["docker", "volume", "ls"], decision="allow")
 prefix_rule(pattern=["coulson", "logs"], decision="allow")
-prefix_rule(pattern=["/Users/ryanudelhoven/.codex/scripts/codex-read"], decision="allow")
+prefix_rule(pattern=["/Users/ryanudelhoven/.codex/scripts/codex-read"], decision="prompt", justification="Writable source is not an approved elevated executable; use the protected installed reader.")
+prefix_rule(pattern=["/Users/ryanudelhoven/.local/share/codex-publish/codex-read"], decision="allow")
 
 # Unrestricted variants can execute code, write files, change services, or send requests.
 prefix_rule(pattern=["rg"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")

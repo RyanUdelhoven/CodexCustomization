@@ -1,5 +1,14 @@
 # Protected merge and push helper
 
+Follow [merge and push execution rules](merge-push.md) for the entire workflow,
+including preflight, search, verification, and native app history operations.
+
+Use `inspect REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` for local preflight and
+tracking inspection. It returns scope and worktrees without network requests or
+tracking writes; it validates configuration and requires a clean checkout first.
+Use `register` with the same arguments to record participation without claiming
+creation. Both operations use the protected tracking dependency, not workspace Python.
+
 Installed executable: `/Users/ryanudelhoven/.local/share/codex-publish/codex-git`.
 Reviewed source: `scripts/codex-git`. The installed copy and its tracking dependency
 live outside the normal Codex writable workspace. Updating either installed file
