@@ -9,6 +9,7 @@
 /skills/*
 !/skills/AGENTS.md
 !/skills/analyze-youtube/
+!/skills/approval-review/
 !/skills/task-research/
 !/skills/cost-aware-options-review/
 !/skills/architecture-mapper/

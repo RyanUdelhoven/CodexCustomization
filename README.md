@@ -7,7 +7,7 @@ The [CodexCustomization repository](https://github.com/RyanUdelhoven/CodexCustom
 - `skills/<name>/`: custom skills and their supporting files.
 - `skills/AGENTS.md`: skill maintenance and synchronization instructions.
 - `AGENTS.md`: user-level working instructions.
-- `hooks.json`: portable Navi approval sound hook.
+- `hooks.json`: local permission-request capture and portable Navi approval sound.
 - `config.example.toml`: sanitized preference template.
 - `scripts/`: optional sound download helper.
 - `sounds/README.md`: audio sources; actual game audio stays local.
@@ -29,6 +29,15 @@ python3 scripts/download-sounds.py
 ```
 
 To use Metal Gear Solid, replace `navi-hey.mp3` with `metal-gear-solid-alert.mp3` in `hooks.json`.
+
+The [approval-review skill](skills/approval-review/SKILL.md) records permission
+requests locally without changing approval decisions. Review and trust the new
+handler in Codex's Review hooks or Settings > Hooks, then reload if needed.
+Confirm capture after a naturally occurring request; synthetic tests do not prove
+the app loaded the hook. Say “review approval friction” to investigate new events.
+Private incidents, corrections, and checkpoints stay in
+`$CODEX_HOME/.local/approval-review` (default `~/.codex/.local/approval-review`),
+outside tracked files. Remove only its capture handler to pause collection.
 
 ## Maintenance
 
