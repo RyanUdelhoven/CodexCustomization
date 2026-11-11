@@ -1,3 +1,0 @@
-interface:
-  display_name: "Security Review"
-  short_description: "Review reachable security flaws with concrete evidence"
