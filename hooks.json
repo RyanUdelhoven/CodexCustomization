@@ -1,12 +1,12 @@
 {
-  "description": "Record local permission requests and play Navi Hey.",
+  "description": "Record local permission requests and play Navi Hey, with a one-in-six chance of Listen.",
   "hooks": {
     "PermissionRequest": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/afplay \"${CODEX_HOME:-$HOME/.codex}/sounds/navi-hey.mp3\"",
+            "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/scripts/approval-sound.py\"",
             "timeout": 5
           },
           {

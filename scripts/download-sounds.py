@@ -6,6 +6,7 @@ from urllib.request import urlopen
 
 SOUNDS = {
     "navi-hey.mp3": "https://www.myinstants.com/media/sounds/oot_navi_hey1.mp3",
+    "navi-listen.mp3": "https://www.myinstants.com/media/sounds/navi-listen-soundtrack5.mp3",
     "metal-gear-solid-alert.mp3": "https://www.myinstants.com/media/sounds/tindeck_1.mp3",
 }
 

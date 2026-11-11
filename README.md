@@ -28,7 +28,7 @@ Download optional sounds without changing the hook:
 python3 scripts/download-sounds.py
 ```
 
-To use Metal Gear Solid, replace `navi-hey.mp3` with `metal-gear-solid-alert.mp3` in `hooks.json`.
+The approval sound script always plays Navi Hey, then has an independent one-in-six chance of playing Listen. To use Metal Gear Solid instead, replace the sound command in `hooks.json` with `/usr/bin/afplay` and the path to `metal-gear-solid-alert.mp3`.
 
 The [approval-review skill](skills/approval-review/SKILL.md) records permission
 requests locally without changing approval decisions. Review and trust the new
