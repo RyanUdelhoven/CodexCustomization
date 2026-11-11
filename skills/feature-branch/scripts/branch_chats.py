@@ -11,8 +11,17 @@ import tempfile
 import uuid
 
 
+GIT_ENV = {"PATH": "/usr/bin:/bin", "HOME": "/var/empty",
+           "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null",
+           "GIT_CONFIG_COUNT": "0", "GIT_TERMINAL_PROMPT": "0",
+           "GIT_NO_REPLACE_OBJECTS": "1"}
+
+
 def git(repo, *args):
-    return subprocess.check_output(["git", "-C", repo, *args], text=True).strip()
+    return subprocess.check_output(
+        ["/usr/bin/git", "--no-optional-locks", "-c", "core.hooksPath=/dev/null",
+         "-c", "core.fsmonitor=false", "-C", repo, *args],
+        env=GIT_ENV, text=True).strip()
 
 
 def validate_record(record):

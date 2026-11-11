@@ -4,12 +4,12 @@ Use this protocol when creating, reusing, handing off, or integrating a branch. 
 
 Resolve the current chat's exact ID and source from trusted session context or app tools. For Codex, retain a verified host ID when available and use the same identity throughout. Never infer identity from a title. If identity or recording is unavailable, continue authorized work, report the tracking gap, and skip automatic archival.
 
-Run the helper with `python3 ~/.codex/skills/feature-branch/scripts/branch_chats.py`. Supply `--repo` with the checkout path and `--branch` with the feature branch name. The helper shares records across worktrees through `git rev-parse --git-common-dir`; records stay outside tracked project files. Git metadata writes still follow execution permissions.
+When installed, run `~/.local/share/codex-publish/codex-branch-chats` directly. Otherwise use `python3 ~/.codex/skills/feature-branch/scripts/branch_chats.py` under normal permissions. Supply `--repo` with the checkout path and `--branch` with the feature branch name. The helper shares records across worktrees through `git rev-parse --git-common-dir`; records stay outside tracked project files. The protected copy uses isolated system Python and fixed, configuration-isolated Git calls. Updating its source requires separately reviewed installation before the installed behavior changes.
 
 Immediately after creating a new branch for this chat, register with:
 
 ```sh
-python3 ~/.codex/skills/feature-branch/scripts/branch_chats.py register \
+~/.local/share/codex-publish/codex-branch-chats register \
   --repo /absolute/repository --branch codex/example \
   --chat-id VERIFIED_CHAT_ID --source codex --created
 ```

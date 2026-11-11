@@ -83,6 +83,30 @@ reviewed approval; updates to the source do not update this installed copy.
 Restart Codex to load the new rules. Policy checks alone do not establish that
 the app has loaded them or eliminated prompts.
 
+Three additional script entry points use reusable direct allowances:
+
+```sh
+/Users/ryanudelhoven/.local/share/codex-publish/codex-skill-validate /path/to/skill
+/Users/ryanudelhoven/.local/share/codex-publish/codex-branch-chats register --repo /path/to/repo --branch codex/example --chat-id VERIFIED_CHAT_ID --source codex --created
+/Users/ryanudelhoven/.local/share/codex-publish/secret_check.py staged --repo /path/to/repo
+```
+
+Arguments remain variable. The validator uses a protected copy of the bundled
+skill validator and existing PyYAML 6.0.3 pure-Python sources; isolated system
+Python imports that dependency only from the protected `validator-lib` directory.
+The tracker uses fixed `/usr/bin/git`, clears inherited Git overrides, disables
+hooks/fsmonitor and global/system configuration, and only records participation.
+It supports `register`, `inspect`, and `close`; it never merges or archives.
+The secret checker uses its existing protected policy and fixed Gitleaks scanner.
+
+Review `scripts/install-script-allowances.py` before installation. Supply
+`--yaml-source /path/to/existing/site-packages/yaml`; no download is needed.
+Use `--destination /temporary/staging/path` for isolated checks. The default
+installation directory is protected and requires approved execution. It also
+updates the publisher's `branch_chats.py` dependency to the reviewed tracker.
+Source changes alone never replace installed copies. General Python, arbitrary
+test runners and installation retain their existing approval boundaries.
+
 ## Merge and push workflow
 
 `git-workflow.rules` is the canonical reviewed Git policy. Raw pushes and branch

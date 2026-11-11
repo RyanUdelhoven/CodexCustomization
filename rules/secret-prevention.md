@@ -40,9 +40,13 @@ review rather than silently replacing them.
 Manual checks from a checkout:
 
 ```sh
-/usr/bin/python3 -I /Users/ryanudelhoven/.local/share/codex-publish/secret_check.py staged
-/usr/bin/python3 -I /Users/ryanudelhoven/.local/share/codex-publish/secret_check.py range --base origin/main --tip HEAD
+/Users/ryanudelhoven/.local/share/codex-publish/secret_check.py staged
+/Users/ryanudelhoven/.local/share/codex-publish/secret_check.py range --base origin/main --tip HEAD
 ```
+
+Invoke the installed executable directly to use its reusable allowance. Its shebang
+already selects isolated system Python. Repository paths and revisions may vary;
+general Python execution and the writable source copy retain normal permissions.
 
 Local hooks can be bypassed or removed. The protected publisher independently
 runs the check with hooks disabled. Other Git clients and machines require hook

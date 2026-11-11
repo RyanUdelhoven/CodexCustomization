@@ -7,7 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 SCRIPT = str(Path(__file__).resolve().parents[1] / 'scripts' / 'branch_chats.py')
 
 def run(*args):
-    return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT).strip()
+    # Platform Git diagnostics belong on stderr, outside the helper's JSON result.
+    return subprocess.run(args, text=True, capture_output=True, check=True).stdout.strip()
 
 with tempfile.TemporaryDirectory() as temporary:
     repo = str(Path(temporary) / 'repo')
@@ -50,5 +51,5 @@ with tempfile.TemporaryDirectory() as temporary:
         helper('inspect')
         raise AssertionError('accepted malformed record')
     except subprocess.CalledProcessError as error:
-        assert 'skip archival' in error.output
+        assert 'skip archival' in error.stderr
     print('PASS: single chat, duplicate registration, shared worktrees, concurrent participants, open lifecycle protection, closed/reused branch, legacy history, malformed records')
