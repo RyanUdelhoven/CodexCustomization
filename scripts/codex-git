@@ -125,6 +125,9 @@ class Publisher:
         # A fast-forward workflow refuses divergence or unrelated local main commits.
         self.git('merge-base', '--is-ancestor', main, remote)
         self.git('merge-base', '--is-ancestor', remote, source)
+        # Protected checker is independent of disabled repository hooks.
+        run(['/usr/bin/python3', '-I', str(INSTALL / 'secret_check.py'),
+             'range', '--repo', str(self.repo), '--base', remote, '--tip', source], self.repo)
         tracking = self.tracking('register', branch, chat)
         self.git('switch', 'main')
         self.git('merge', '--ff-only', source)

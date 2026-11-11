@@ -49,7 +49,9 @@ an exact-tip lease to preserve concurrent commits; different feature tips remain
 untouched and disable archival. Local cleanup uses `branch -d`. Git hooks and
 fsmonitor are disabled, global/system Git configuration is excluded, inherited
 Git overrides are removed, and authentication uses the fixed installed GitHub CLI
-credential helper. Project verification remains the caller's responsibility;
+credential helper. The protected secret checker scans outgoing history before switching main;
+missing tooling, detected secrets, or scan errors stop publication. See
+[secret prevention](secret-prevention.md). Project verification remains the caller's responsibility;
 publication does not run repository scripts or tests.
 
 Output includes publication evidence, cleanup status, and the participation record.
@@ -73,6 +75,6 @@ Other command spellings fall back to normal approval policy. Rules govern shell
 escalation, not every action executed within a writable sandbox.
 
 Restart Codex after changing rule files. Until then, the running session may retain
-old rules. For installation, explicitly approve copying both reviewed files into
+old rules. For installation, explicitly approve copying reviewed files into
 the protected directory; never whitelist the installer, Python, or a general shell.
 Run `python3 -m unittest discover -s scripts -p 'test_*.py'` for regression checks.

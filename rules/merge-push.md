@@ -79,3 +79,15 @@ disable approvals globally to make the workflow appear successful.
 The protected installation and future changes to it require reviewed installation
 approval. Restart Codex after policy updates. A CLI rule check predicts policy;
 it does not prove the app displayed no approval. Claim that only after observing it.
+
+## Mandatory secret gate
+
+Before publication, run the shared secret checker against every outgoing commit,
+not only the final diff or working tree. Require the protected filename policy and
+Gitleaks content scan; missing tooling, incomplete history, or scan errors stop
+publication. Never bypass a failure with `--no-verify`, scanner exclusions, or an
+unreviewed baseline. Safe environment templates still require content scanning.
+The protected publisher calls this gate directly because it disables Git hooks.
+For ordinary Git workflows, install pre-commit and pre-push hooks as described in
+[secret prevention](secret-prevention.md). Do not print detected values. Remove
+secrets from all outgoing commits; rotate/revoke any credentials already exposed.

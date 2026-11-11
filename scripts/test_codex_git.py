@@ -48,6 +48,8 @@ class PublicationTests(unittest.TestCase):
         git('commit', '-am', 'feature', cwd=self.repo)
         git('push', 'origin', 'codex/example', cwd=self.repo)
         shutil.copy(ROOT / 'skills/feature-branch/scripts/branch_chats.py', self.root)
+        for name in ['secret_check.py', 'secret-policy.toml']:
+            shutil.copy(ROOT / 'scripts' / name, self.root)
         self.old_install = Publisher.tracking.__globals__['INSTALL']
         Publisher.tracking.__globals__['INSTALL'] = self.root
         self.addCleanup(lambda: Publisher.tracking.__globals__.__setitem__('INSTALL', self.old_install))
@@ -137,6 +139,19 @@ class PublicationTests(unittest.TestCase):
         receipt = self.publisher.publish('codex/example', CHAT)
         self.assertIn('remote feature retained', ' '.join(receipt['cleanup']))
         self.assertTrue(git('branch', '--list', 'codex/example', cwd=self.remote))
+
+    def test_secret_deleted_in_later_commit_blocks_before_integration(self):
+        before = git('rev-parse', 'main', cwd=self.remote)
+        (self.repo / '.env').write_text('LOCAL_VALUE=fixture')
+        git('add', '.', cwd=self.repo)
+        git('commit', '-m', 'accidental environment', cwd=self.repo)
+        git('rm', '.env', cwd=self.repo)
+        git('commit', '-m', 'delete environment', cwd=self.repo)
+        with self.assertRaisesRegex(ValueError, 'filename blocked'):
+            self.publisher.publish('codex/example', CHAT)
+        self.assertEqual(git('rev-parse', 'main', cwd=self.remote), before)
+        self.assertEqual(git('branch', '--show-current', cwd=self.repo), 'codex/example')
+        self.assertFalse((self.repo / '.git/codex-branch-chats').exists())
 
     def test_cli_rejects_extra_flags_main_and_unknown_repositories(self):
         for args in [['publish', 'mynormal', 'main', CHAT],
