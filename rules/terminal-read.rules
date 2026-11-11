@@ -28,6 +28,14 @@ prefix_rule(pattern=["coulson", "logs"], decision="allow")
 prefix_rule(pattern=["/Users/ryanudelhoven/.codex/scripts/codex-read"], decision="prompt", justification="Writable source is not an approved elevated executable; use the protected installed reader.")
 prefix_rule(pattern=["/Users/ryanudelhoven/.local/share/codex-publish/codex-read"], decision="allow")
 
+# Policy inspection treats the command after -- as data; it never executes it.
+prefix_rule(pattern=["codex", "execpolicy", "check"], decision="allow")
+prefix_rule(pattern=["/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex", "execpolicy", "check"], decision="allow")
+# Reviewed stdlib-only recorder copy with an isolated system-Python shebang.
+# Allows varying batch IDs, limits and report paths, not arbitrary Python execution.
+prefix_rule(pattern=["/Users/ryanudelhoven/.local/share/codex-publish/codex-approval-review"], decision="allow")
+prefix_rule(pattern=["/usr/bin/install", "-m", "555", "/private/tmp/codex-approval-review-reviewed", "/Users/ryanudelhoven/.local/share/codex-publish/codex-approval-review"], decision="prompt", justification="Replacing the approved recorder executable requires a fresh code review.")
+
 # Unrestricted variants can execute code, write files, change services, or send requests.
 prefix_rule(pattern=["rg"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
 prefix_rule(pattern=["sed"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")

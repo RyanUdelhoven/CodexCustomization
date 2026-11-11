@@ -96,6 +96,22 @@ class InstalledPolicyTests(unittest.TestCase):
             rules.extend(["--rules", str(path)])
         cases = [(rule["pattern"], rule["decision"]) for rule in definitions]
         cases.extend([
+            (["git", "for-each-ref", "--format=%(refname:short)", "refs/heads", "refs/remotes/origin"], "allow"),
+            (["git", "for-each-ref", "--merged=HEAD", "--sort=-committerdate"], "allow"),
+            (["git", "show-ref", "--verify", "refs/heads/main"], "allow"),
+            (["git", "ls-tree", "-r", "--name-only", "HEAD", "--", "scripts"], "allow"),
+            (["git", "merge-base", "--is-ancestor", "main", "HEAD"], "allow"),
+            (["git", "rev-list", "--count", "main..HEAD"], "allow"),
+            (["bash", "-lc", "git for-each-ref refs/heads && python3 -c 'print(1)'"], "prompt"),
+            (["sh", "-c", "git ls-tree HEAD; git push --force origin main"], "prompt"),
+            (["git", "-C", str(ROOT), "for-each-ref", "--count=10"], "allow"),
+            (["git", "-C", str(ROOT / "skills"), "ls-tree", "HEAD"], "allow"),
+            (["codex", "execpolicy", "check", "--rules", str(ROOT / "rules/git-workflow.rules"),
+              "--", "git", "push", "--force", "origin", "main"], "allow"),
+            ([CODEX, "execpolicy", "check", "--", "python3", "-c", "print('not executed')"], "allow"),
+            (["/Users/ryanudelhoven/.local/share/codex-publish/codex-approval-review", "prepare", "--limit", "200"], "allow"),
+            (["/Users/ryanudelhoven/.local/share/codex-publish/codex-approval-review", "complete", "--batch",
+              "00000000-0000-0000-0000-000000000000", "--report", "/tmp/review.md"], "allow"),
             (["/usr/bin/install", "-m", "555", str(ROOT / "scripts/codex-git"),
               "/Users/ryanudelhoven/.local/share/codex-publish/codex-git"], "prompt"),
             (["git", "push", "origin", "main"], "prompt"),

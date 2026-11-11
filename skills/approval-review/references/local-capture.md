@@ -6,7 +6,11 @@ Records use private directories (0700), files (0600), locked appends, and no ext
 
 ## Commands
 
-Use `python3 ~/.codex/skills/approval-review/scripts/approval_log.py` followed by:
+When installed, use `~/.local/share/codex-publish/codex-approval-review` directly.
+This reviewed recorder copy uses isolated system Python and needs no wrapper;
+replacing it requires reviewed installation. Otherwise use
+`python3 ~/.codex/skills/approval-review/scripts/approval_log.py` under normal
+permissions. Either entry point accepts:
 
 - `status`: show capture count, checkpoint, policy drift, and last report.
 - `prepare --limit 50`: persist a review batch and return new events (maximum 200).

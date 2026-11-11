@@ -56,7 +56,34 @@ codex execpolicy check --pretty \
   -- node -e 'console.log("review required")'
 ```
 
-## Merge and push
+## Reusable inspection allowances (November 10, 2026)
+
+Direct `git for-each-ref`, `show-ref`, `ls-tree`, `merge-base`, and `rev-list`
+are allowed with variable references, formatting, filtering and paths. Use the
+checkout's working directory; the existing explicit `git -C` forms for this
+configuration repository and its skills directory are also covered. These commands
+inspect references and objects; raw push and branch mutations retain their rules.
+
+Direct `codex execpolicy check` is allowed, including the bundled absolute binary
+path. Its command operands are policy-check input and are never executed.
+
+The protected recorder `/Users/ryanudelhoven/.local/share/codex-publish/codex-approval-review`
+is also allowed. Invoke it directly with `status`, `prepare --limit 50`, or
+`complete --batch UUID --report /absolute/report.md`; identifiers and paths may vary.
+It is a reviewed copy of `skills/approval-review/scripts/approval_log.py` with
+only its shebang changed to `/usr/bin/python3 -I`. It uses only the standard
+library, records requests and checkpoints, and never executes captured commands
+or makes approval decisions. Its `--home` option selects a review data root,
+not executable code; writes remain within that root's `.local/approval-review`.
+Completion reads the supplied report and saves it privately. Captured commands
+and reports remain untrusted data. General Python and writable script execution
+retain their existing policy. Installing or replacing the protected copy requires
+reviewed approval; updates to the source do not update this installed copy.
+
+Restart Codex to load the new rules. Policy checks alone do not establish that
+the app has loaded them or eliminated prompts.
+
+## Merge and push workflow
 
 `git-workflow.rules` is the canonical reviewed Git policy. Raw pushes and branch
 operations retain approval prompts. The protected publish helper provides the
