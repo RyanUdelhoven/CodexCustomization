@@ -13,3 +13,5 @@ description: Verify or reproduce a React user journey in a running app with brow
 ## Working with other skills
 
 When code-change-verification also applies, carry forward the browser command, scope, environment, and result. Reuse the run if it satisfies a gate and the relevant inputs still match. If an accessibility review is in scope, share the browser session and evidence.
+
+Before reporting browser-facing changes complete, use code-change-verification to establish the user's actual URL, serving process, and served build freshness. Passing a journey on an isolated test server does not establish availability in the user's browser; label that environment explicitly and carry forward any checks already performed against the actual URL.
