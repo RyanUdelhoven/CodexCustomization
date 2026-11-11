@@ -56,3 +56,27 @@ When the user requests coverage of many listed items:
 ## New skill review
 
 Whenever you author a new Codex skill, apply `skill-deconfliction` from `~/.codex/skills/skill-deconfliction/SKILL.md` before installing it. Review the draft against available skills, align affected writable custom skills, then validate and install the draft.
+
+## Global Obsidian vault protection
+
+These standing rules apply across projects to `/Users/ryanudelhoven/Documents/Notes` and all its contents.
+
+- Treat the vault as read-only by default.
+- Require explicit user requests before creating, editing, renaming, moving, deleting, or reorganizing vault contents.
+- An explicit request to save a new note authorizes creating that note only.
+- Saving a note does not authorize changing existing notes, indexes, links, metadata, or Obsidian configuration.
+- Editing an existing note requires an explicit request covering that edit.
+- Keep drafts, scripts, and intermediate files in the primary project folder.
+- Consult only relevant vault material when the request calls for it; never automatically read the entire vault.
+- Do not consult the vault for unrelated tasks or request broader access unless necessary.
+- These instructions guide behavior; they grant no filesystem access and override no permissions.
+
+## Reference role in this project
+
+This section applies only when `/Users/ryanudelhoven/.codex` is the primary project folder.
+Use that folder as the work desk for drafts, scripts, and intermediate files.
+The Obsidian vault supplies reference material, not a working directory.
+Consult it when the user names a note, asks to use vault material, or the request clearly depends
+on relevant personal reference material there. Start with a named path or narrowly targeted search,
+then read only the necessary notes. Do not load the vault as routine startup context.
+Apply the global vault protection above without duplicating or expanding its authorization.
