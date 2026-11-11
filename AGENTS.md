@@ -4,6 +4,11 @@ For merge/push requests, follow [the execution rules](rules/merge-push.md) befor
 running preflight commands. Use protected helpers and separate direct reads;
 do not introduce prompted raw commands into an otherwise approved workflow.
 
+Recognize `mp` as “merge push” and `mpa` as “merge push archive” only
+when the user issues a workflow command in an established repository/branch
+context. Follow [shortcut interpretation](rules/merge-push.md#contextual-shortcuts).
+Mentions, quotations, examples, and unrelated acronym discussions are not commands.
+
 ## Writing style
 
 - Use active voice.

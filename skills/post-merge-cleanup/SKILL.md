@@ -1,9 +1,11 @@
 ---
 name: post-merge-cleanup
-description: Finish an authorized merge with local and remote branch cleanup, then archive the originating chat after a verified single-chat lifecycle merges into the primary branch and pushes to origin. Use during merge requests and post-merge cleanup; preserve branches or chats when explicitly requested.
+description: Finish an authorized merge with branch cleanup and eligible chat archival. Use during merge requests, contextual mp or mpa workflow commands, and post-merge cleanup; preserve branches or chats when explicitly requested. Acronym mentions alone do not trigger execution.
 ---
 
 # Post-merge cleanup
+
+Recognize `mp` (“merge push”) and `mpa` (“merge push archive”) only as direct workflow instructions in clear repository/branch context. Follow [contextual shortcuts](../../rules/merge-push.md#contextual-shortcuts) for interpretation; quotations, examples, definitions, and unrelated acronym mentions do not authorize execution. Both aliases retain this skill's existing safeguards, including conditional archival eligibility; `mpa` makes the archival request explicit without bypassing those checks.
 
 A merge request automatically authorizes and requires deleting the completed feature branch both locally and on its source remote, if present. Complete cleanup within the merge workflow after verifying successful integration and target publication; do not wait for a separate cleanup request or conversational confirmation. Keep execution permission requirements and explicit requests to retain a branch. If cleanup cannot safely complete, report the retained branch and concrete blocker rather than treating the merge workflow as fully complete.
 

@@ -5,6 +5,26 @@ execution permissions. Apply them to authorized merge/push work in registered
 repositories; user requests or applicable standing user instructions supply
 publication authorization, not this document.
 
+## Contextual shortcuts
+
+Treat `mp` as “merge push” and `mpa` as “merge push archive” when used
+as a direct user instruction about the repository work under discussion.
+Match whole tokens, case-insensitively; allow ordinary punctuation and phrasing
+such as “please mp”. A standalone shortcut after implementation or verification
+is sufficient when the repository and intended branch are clear.
+
+Require both command intent and a clear repository/branch context. Do not trigger
+on quoted text, examples, code, filenames, acronym explanations, negated requests,
+or unrelated uses such as “What does MPA mean?” A request to define or configure
+these shortcuts does not execute them. If a command interpretation is plausible
+but the intended action or repository is ambiguous, clarify before mutations.
+
+These aliases preserve the full commands' verification, permissions, publication,
+branch cleanup, and archival safeguards. `mpa` explicitly requests archival after
+successful merge/push and cleanup; use post-merge-cleanup to determine eligibility
+and report any blocker. `mp` preserves the existing conditional auto-archive
+behavior of “merge push”; “mp, keep this chat open” overrides that default.
+
 ## Remote feature branches
 
 Keep implementation branches local unless the user requests a remote branch or
