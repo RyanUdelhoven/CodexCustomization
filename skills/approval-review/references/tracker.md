@@ -17,7 +17,7 @@ The authoritative JSONL, SQLite annotations and skill-run journals remain under 
 `annotate --event EVENT_ID --status investigating --notes "Investigate the full command"` replaces the complete current annotation and preserves previous versions in audit history. Include every field to retain. Optional fields: `--outcome`, `--evidence`, `--proposed-rule`, `--verification`.
 
 Statuses: new, investigating, rule_proposed, resolved, intentionally_prompted.
-Outcomes: unknown, human_prompt_confirmed, user_approved, user_denied, automatic_allow, automatic_deny, execution_confirmed. Confirmed outcomes require an evidence reference. Later execution does not prove human approval. Annotation status and incremental review checkpoints are independent. Proposed rules remain notes until the user requests implementation; rule updates require combined-policy checks.
+Outcomes: unknown, human_prompt_confirmed, user_approved, user_denied, automatic_allow, automatic_deny, execution_confirmed. Confirmed outcomes require an evidence reference. Later execution does not prove human approval. Annotation status and incremental review checkpoints are independent. Displaying, exporting, or annotating records does not itself authorize rule changes. A requested approval review implements suitable allowances by default under SKILL.md; an explicitly review-only request leaves proposals as notes. Rule updates require combined-policy checks and workflow verification.
 
 ## Capture and verification
 

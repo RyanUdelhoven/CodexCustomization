@@ -1,11 +1,11 @@
 ---
 name: approval-review
-description: Track approval requests and skill-run token usage, review local evidence, and recommend or implement explicitly requested permission-rule changes. Passive recording does not trigger an investigation or rule changes.
+description: Track approval requests and skill-run token usage, review local evidence, and implement safe permission allowances during requested approval reviews. Honor explicit review-only requests; passive recording does not trigger investigation or rule changes.
 ---
 
 # Review approval friction
 
-Use local incident capture plus incremental investigation. Default to suggestions; a review request does not authorize installing new permission rules. Explicit implementation requests authorize the scoped change, subject to execution permissions. Never grant permissions merely because a command recurs or was approved once.
+Use local incident capture plus incremental investigation. A request to review recent approval requests or approval friction authorizes finding and implementing suitable permission allowances within that review's scope, subject to execution permissions and the Codex Customization project boundary. Honor explicit requests for findings, suggestions, or review only without making changes. Merely displaying/exporting records, recording events, or discussing the workflow does not authorize a review or rule edits. Never grant permissions merely because a command recurs or was approved once.
 
 ## Start with new evidence
 
@@ -31,13 +31,15 @@ Inspect the currently loaded policy sources when available, including overlappin
 
 Maintain these evidence distinctions: permission request observed; human prompt confirmed; user approval confirmed; automatic rejection confirmed; execution result confirmed; outcome unknown. The capture hook proves only a request reached the hook. It does not prove a prompt appeared, who approved, or whether execution completed. Correlate by supplied IDs where possible; never infer approval from later success or nearest timestamps alone.
 
-## Preserve corrections and propose changes
+## Preserve corrections and implement safe allowances
 
 Append material user corrections to local `corrections.md`: original assumption, user's intended behavior, correction, source chat/turn or event IDs, resulting change, verification, and unresolved limits. Preserve superseded decisions with their replacement rather than silently deleting history. Keep personal incident details out of the portable skill.
 
-Suggest reusable allowances for suitable operations, normal permission for legitimate sensitive actions, and rejection for the user's prohibited actions. Assess the full capability of variable trailing arguments; avoid grants tied unnecessarily to individual branches, batch IDs or temporary paths. Prefer direct command or stable reviewed entry-point allowances when their capabilities are acceptable. Where positional prefixes cannot express a meaningful safety boundary, consider a protected helper that validates arguments. Review writable dependencies and installation boundaries. Avoid blanket interpreter, shell, or test-runner grants. Include the review's own approval friction. Capture remains observational and never emits approval decisions.
+Evaluate every distinct incident or capability in the requested review scope, grouping duplicates without ignoring one-off requests. Implement reusable allowances wherever the capability can be safely bounded. For potentially dangerous commands, actively develop a useful constrained alternative rather than stopping at a warning: narrow operations, paths, destinations, or arguments, separate read-only inspection from mutation, or create a protected helper that validates inputs and rejects unsafe variants. Implement and verify that alternative when feasible within scope. Assess the full capability of variable trailing arguments; avoid grants tied unnecessarily to individual branches, batch IDs or temporary paths. Review writable dependencies and installation boundaries; an unrestricted writable wrapper does not make its underlying command safe. Avoid blanket interpreter, shell, or test-runner grants. Include the review's own approval friction. Capture remains observational and never emits approval decisions.
 
-Report recurring causes, proposed changes, expected benefit, retained boundaries, and evidence gaps concisely. Carry unresolved incidents forward. Do not apply suggestions during a review-only request. When implementation is requested, use feature-branch and code-change-verification; skill changes also use skill-creator and skill-deconfliction. Approval-review owns incident evidence and corrections, not generic research, repository gates, or merge execution.
+Preserve user prohibitions, sandbox and managed-policy boundaries, and task-specific authorization for actions such as publication or deletion. An execution allowance does not authorize performing those actions. If no useful safe alternative exists, retain approval or rejection and report the concrete blocker and alternatives assessed. Do not bypass automatic review, hook trust, protected installation review, or required filesystem approval to complete an allowance.
+
+Report implemented allowances, constrained alternatives, retained approvals or rejections, expected benefit, and evidence gaps concisely. Carry unresolved incidents forward. Do not apply suggestions during an explicitly review-only request. For implementation, including the default requested-review workflow, use feature-branch and code-change-verification; skill changes also use skill-creator and skill-deconfliction. Approval-review owns incident evidence and corrections, not generic research, repository gates, or merge execution.
 
 ## Verify and checkpoint
 
@@ -45,4 +47,4 @@ Test proposed rules against all applicable rule files with allowed, prompted, an
 
 Write a local review report, including unresolved cases and actual verification. Finish the prepared batch using `complete --batch ID --report /absolute/report.md`; the helper refuses stale cursors or changed policy. Completing a batch means investigated, not resolved. New events remain pending; use another batch when `has_more` is true. If implementing rules changed the policy, prepare a fresh batch and reassess before checkpointing.
 
-For a normal review, stop after a useful bounded batch and report any backlog. Do not schedule recurring reviews or scan every task automatically without a separate user request.
+Use bounded batches to keep investigation incremental. For a request to review recent approvals, continue through batches covering the pending evidence at review start, and follow relevant unresolved cases; do not stop after the first batch while that requested scope remains. Report the covered range and any inaccessible evidence or remaining backlog. Do not chase events arriving after review start indefinitely, schedule recurring reviews, or scan every task automatically without a separate user request.
