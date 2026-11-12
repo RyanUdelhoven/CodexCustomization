@@ -1,6 +1,6 @@
 ---
 name: approval-review
-description: Show the local approval tracker and skill-run token measurements, search approval history, and investigate recurring Codex approval interruptions to recommend bounded permission rules. Passive recording does not trigger an investigation or rule changes.
+description: Track approval requests and skill-run token usage, review local evidence, and recommend or implement explicitly requested permission-rule changes. Passive recording does not trigger an investigation or rule changes.
 ---
 
 # Review approval friction
@@ -13,7 +13,7 @@ For “show skill token usage,” recording skill runs, or comparing observed ru
 
 Use installed `codex-approval-tracker` and `codex-skill-usage` directly from `~/.local/share/codex-publish` when available. Do not route them through Python or substitute a writable source copy for the approved executable. Normal source execution is a fallback only when installation is absent. Repeated captured requests identify candidates for review, not proof of successful execution or safety; preserve source provenance and avoid counting script names inside inline code as invocations.
 
-For “show approval requests,” “open the approval tracker,” filtering history, exports, task labels, or review annotations, use [the tracker](references/tracker.md). Viewing the tracker does not prepare or consume a review batch. For “review approval friction” or “find recurring approval requests,” use its grouped evidence alongside the incremental investigation below. The tracker owns presentation and annotations; this skill owns investigation and recommendations. Skill-creator owns authoring, and existing merge workflows retain publication ownership.
+For “show approval requests,” exports, task labels, or review annotations, use [the record commands](references/tracker.md). Reading records does not consume a review batch. For “review approval friction” or “find recurring approval requests,” use grouped evidence alongside the incremental investigation below. This capability uses local files and CLI commands; it has no dashboard or server. The record commands own evidence and annotations; this skill owns investigation and requested rule updates. Existing merge workflows retain publication ownership.
 
 Use the reviewed installed recorder `~/.local/share/codex-publish/codex-approval-review prepare` when available; otherwise run `python3 ~/.codex/skills/approval-review/scripts/approval_log.py prepare` under normal permissions. Use the same entry point for status and completion. Read its batch, local `corrections.md`, and the previous report when present. Operational details are in [local capture](references/local-capture.md). Local data lives at `$CODEX_HOME/.local/approval-review`, falling back to `~/.codex/.local/approval-review`; never commit it.
 

@@ -1,6 +1,6 @@
 # Skill-run token measurements
 
-The dashboard's **Skill runs** view measures model attempts that start while explicit skill markers are active. It is a workflow interval measurement, not isolated instruction overhead, monetary cost, quota use, or proof of savings. It includes repeated context, other active skills, reasoning, and instrumentation overhead. A controlled comparison belongs to context-audit.
+Skill-run records measure model attempts that start while explicit skill markers are active. It is a workflow interval measurement, not isolated instruction overhead, monetary cost, quota use, or proof of savings. It includes repeated context, other active skills, reasoning, and instrumentation overhead. A controlled comparison belongs to context-audit.
 
 ## Record an interval
 
@@ -13,7 +13,7 @@ python3 ~/.codex/skills/approval-review/scripts/skill_usage.py finish --runs RET
 
 Start only the skills actually used, before their substantive workflows; retain IDs and finish each when its workflow ends. Batch simultaneous starts/finishes. A skill already active in the same session/agent scope must be reused or finished first. Finishes are idempotent and validate every supplied ID before changing anything. Interrupted runs remain visibly running; use `finish --runs ID --abandoned` only when the user or observed workflow confirms abandonment. Do not fabricate earlier boundaries or silently close other agents' runs.
 
-The default scope includes all agents reporting the same session ID. Supply `--agent-id VERIFIED_AGENT_ID` to restrict a run to that agent. The UI shows this scope. Never infer chat identity from its title. When exact task titles are unavailable, preserve the session ID and show Unknown. Root AGENTS.md supplies automatic marker guidance for future chats; user instructions may disable it. Instruction-based markers require agent cooperation and are not guaranteed runtime skill-activation events.
+The default scope includes all agents reporting the same session ID. Supply `--agent-id VERIFIED_AGENT_ID` to restrict a run to that agent. Each record includes this scope. Never infer chat identity from its title. When exact task titles are unavailable, preserve the session ID and show Unknown. Root AGENTS.md supplies automatic marker guidance for future chats; user instructions may disable it. Instruction-based markers require agent cooperation and are not guaranteed runtime skill-activation events.
 
 ## Hook collection and activation
 
@@ -37,10 +37,10 @@ Pre/Post pairing uses session, turn, agent, and supplied request identity when a
 
 Approval events in the same session and time window link as supporting evidence, not proof of command execution or token causation. Agent-specific runs may still list same-session approval events because PermissionRequest does not reliably expose agent identity. Historical approvals have no run totals without recorded boundaries.
 
-`skill_usage.py status` prints the local run measurements and hook health. Redacted dashboard/CLI exports include numeric measurements, coverage, and run IDs while omitting skills, names, session IDs, paths, sample identities, and task text. The dashboard remains read-only; marker commands own changes.
+`skill_usage.py status` prints the local run measurements and hook health. Redacted CLI exports include numeric measurements, coverage, and run IDs while omitting skills, names, session IDs, paths, sample identities, and task text. Marker commands own interval changes; review/export commands inspect the records.
 
-The protected tracker/usage installation is produced by `scripts/install-tracker-allowances.py` after review. It copies the recorder, both entry points, their fixed local dependencies, and the dashboard HTML. No downloads or runtime imports from the checkout occur. Installing or replacing those copies requires approval. Source updates do not alter installed behavior; re-review and reinstall deliberately. The installer and arbitrary test discovery retain approval.
+The protected tracker/usage installation is produced by `scripts/install-tracker-allowances.py` after review. It copies the recorder, both entry points, their fixed local dependencies, without any UI assets. No downloads or runtime imports from the checkout occur. Installing or replacing those copies requires approval. Source updates do not alter installed behavior; re-review and reinstall deliberately. The installer and arbitrary test discovery retain approval.
 
 ## Verify
 
-Run `python3 -m unittest discover -s skills/approval-review/scripts -p 'test_*.py'`. Verify exact interval membership, shared unique totals, token subsets, retries, missing/null counts, concurrent ambiguity, abandoned runs, private storage, exports, and HTTP rendering. Verify the **Skill runs** tab through the running app URL after restarting its process. A missing live hook produces an honest unmeasured run.
+Run `python3 -m unittest discover -s skills/approval-review/scripts -p 'test_*.py'`. Verify exact interval membership, shared unique totals, token subsets, retries, missing/null counts, concurrent ambiguity, abandoned runs, private storage, exports. Confirm the removed serve command is rejected. A missing live hook produces an honest unmeasured run.

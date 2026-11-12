@@ -5,8 +5,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from urllib.request import urlopen
-from urllib.error import HTTPError
 
 from approval_log import Store
 from approval_tracker import Tracker
@@ -86,35 +84,18 @@ class TrackerTests(unittest.TestCase):
         self.assertEqual(target.stat().st_mode & 0o777, 0o600)
         self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
 
-    def test_http_authorization_refresh_and_no_mutation(self):
-        process = subprocess.Popen([sys.executable, str(SCRIPT), '--home', str(self.home), 'serve'],
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        def cleanup():
-            process.terminate()
-            process.communicate(timeout=5)
-        self.addCleanup(cleanup)
-        url = process.stdout.readline().strip()
-        self.assertTrue(url.startswith('http://127.0.0.1:'))
-        base, query = url.split('?', 1)
-        with self.assertRaises(HTTPError) as error:
-            urlopen(base, timeout=5)
-        self.assertEqual(error.exception.code, 403)
-        error.exception.close()
-        with urlopen(url, timeout=5) as response:
-            self.assertIn('Approval tracker', response.read().decode())
-            self.assertEqual(response.headers['Cache-Control'], 'no-store')
-        def read():
-            with urlopen(base + 'data?' + query, timeout=5) as response:
-                return json.load(response)
-        self.assertEqual(read()['count'], 0)
-        self.capture('</script><script>alert(1)</script>')
-        self.assertEqual(read()['count'], 1)
-        self.assertEqual(read()['rows'][0]['command'], '</script><script>alert(1)</script>')
+    def test_cli_has_no_server_and_status_stays_compact(self):
+        result = subprocess.run([sys.executable, str(SCRIPT), '--home', str(self.home), 'serve'],
+                                capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        result = subprocess.run([sys.executable, str(SCRIPT), '--home', str(self.home), 'status'],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertNotIn('runs', json.loads(result.stdout)['skill_usage'])
+        self.capture()
         (self.store.root / 'events.jsonl').write_text('malformed')
-        with self.assertRaises(HTTPError) as error:
-            read()
-        self.assertEqual(error.exception.code, 503)
-        error.exception.close()
+        with self.assertRaises(ValueError):
+            self.tracker.snapshot()
 
     def test_legacy_log_and_concurrent_readers(self):
         self.capture()

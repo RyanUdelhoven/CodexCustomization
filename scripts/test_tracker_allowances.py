@@ -40,7 +40,9 @@ class TrackerAllowanceTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         result = self.command('codex-approval-tracker', *args, 'status', env=env, cwd=hostile)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(json.loads(result.stdout)['skill_usage']['runs'][0]['state'], 'finished')
+        self.assertEqual(json.loads(result.stdout)['skill_usage']['run_count'], 1)
+        result = self.command('codex-skill-usage', *args, 'status', env=env, cwd=hostile)
+        self.assertEqual(json.loads(result.stdout)['runs'][0]['state'], 'finished')
         for name in ('codex-approval-tracker', 'codex-skill-usage'):
             result = self.command(name, '-c', 'print("no")', env=env, cwd=hostile)
             self.assertNotEqual(result.returncode, 0)
@@ -60,7 +62,7 @@ class TrackerAllowanceTests(unittest.TestCase):
         self.assertEqual(output.stat().st_mode & 0o777, 0o600)
         result = self.command('codex-approval-tracker', *args, 'export', '--output', str(output))
         self.assertNotEqual(result.returncode, 0)
-        result = self.command('codex-approval-tracker', 'serve', '--host', '0.0.0.0')
+        result = self.command('codex-approval-tracker', 'serve')
         self.assertNotEqual(result.returncode, 0)
 
     def test_readonly_dependencies_and_source_changes_do_not_modify_install(self):
@@ -68,6 +70,10 @@ class TrackerAllowanceTests(unittest.TestCase):
             target = self.destination / name
             self.assertEqual(target.read_bytes(), content)
             self.assertEqual(target.stat().st_mode & 0o777, mode)
+        legacy_ui = self.destination / 'tracker.html'
+        legacy_ui.write_text('obsolete UI')
+        INSTALLER['install'](self.destination, self.payload)
+        self.assertFalse(legacy_ui.exists())
         link = self.root / 'link'
         link.symlink_to(self.destination, target_is_directory=True)
         with self.assertRaises(ValueError):

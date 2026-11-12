@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
-"""Private approval dashboard and evidence-backed annotations; standard library only."""
+"""Private approval records, exports, and evidence-backed review annotations."""
 import argparse
 import contextlib
 from collections import Counter, defaultdict
 import datetime
 import hashlib
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
-import secrets
 import sqlite3
 import sys
-from urllib.parse import urlsplit, parse_qs
 
 from approval_log import Store, now
 from skill_usage import Usage
@@ -138,55 +135,10 @@ class Tracker:
         return snapshot
 
 
-def serve(tracker, port):
-    token = secrets.token_urlsafe(24)
-    page = Path(__file__).with_name('tracker.html').read_bytes()
-
-    class Handler(BaseHTTPRequestHandler):
-        def log_message(self, *args):
-            pass  # Do not write tokens or captured commands into HTTP access logs.
-
-        def do_GET(self):
-            parsed = urlsplit(self.path)
-            if parse_qs(parsed.query).get('token') != [token]:
-                self.send_error(403)
-                return
-            try:
-                if parsed.path == '/':
-                    body, mime = page, 'text/html; charset=utf-8'
-                elif parsed.path in ('/data', '/export'):
-                    body = json.dumps(tracker.snapshot(redacted=parsed.path == '/export')).encode()
-                    mime = 'application/json'
-                else:
-                    self.send_error(404)
-                    return
-            except (OSError, ValueError, sqlite3.Error, KeyError, TypeError):
-                self.send_error(503, 'Tracker unavailable; inspect local log integrity and storage')
-                return
-            self.send_response(200)
-            self.send_header('Content-Type', mime)
-            self.send_header('Content-Length', str(len(body)))
-            self.send_header('Cache-Control', 'no-store')
-            self.send_header('Referrer-Policy', 'no-referrer')
-            self.send_header('X-Content-Type-Options', 'nosniff')
-            self.send_header('Content-Security-Policy', "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'")
-            self.end_headers()
-            self.wfile.write(body)
-
-    server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
-    print(f'http://127.0.0.1:{server.server_port}/?token={token}', flush=True)
-    try:
-        server.serve_forever()
-    finally:
-        server.server_close()
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--home', default=os.environ.get('CODEX_HOME', str(Path.home() / '.codex')))
     sub = parser.add_subparsers(dest='action', required=True)
-    view = sub.add_parser('serve')
-    view.add_argument('--port', type=int, default=0)
     sub.add_parser('status')
     export = sub.add_parser('export')
     export.add_argument('--output', required=True)
@@ -203,9 +155,7 @@ def main():
     args = parser.parse_args()
     tracker = Tracker(args.home)
     try:
-        if args.action == 'serve':
-            serve(tracker, args.port)
-        elif args.action == 'annotate':
+        if args.action == 'annotate':
             tracker.annotate(args.event, args.status, args.outcome, args.evidence, args.notes,
                              args.proposed_rule, args.verification)
             print('Annotation saved; original evidence retained.')
@@ -221,7 +171,10 @@ def main():
             print('Export saved.')
         else:
             data = tracker.snapshot()
-            print(json.dumps({k: v for k, v in data.items() if k not in ('rows', 'candidates')}, indent=2))
+            result = {k: v for k, v in data.items() if k not in ('rows', 'candidates', 'skill_usage')}
+            result['skill_usage'] = {k: v for k, v in data['skill_usage'].items() if k != 'runs'}
+            result['skill_usage']['run_count'] = len(data['skill_usage']['runs'])
+            print(json.dumps(result, indent=2))
     except (OSError, ValueError, sqlite3.Error, KeyError, TypeError):
         print('approval-tracker: unavailable; inspect arguments, log integrity and storage locally', file=sys.stderr)
         return 1

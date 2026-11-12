@@ -28,7 +28,7 @@ def isolated(content, dependencies=False):
 
 
 def payloads():
-    names = ('approval_log.py', 'approval_tracker.py', 'skill_usage.py', 'tracker.html')
+    names = ('approval_log.py', 'approval_tracker.py', 'skill_usage.py')
     for name in names:
         if (SOURCE / name).is_symlink() or not (SOURCE / name).is_file():
             raise ValueError('Expected regular reviewed source')
@@ -41,13 +41,15 @@ def payloads():
         'codex-skill-usage': (isolated(usage, True), 0o555),
         'approval-lib/approval_log.py': (recorder, 0o444),
         'approval-lib/skill_usage.py': (usage, 0o444),
-        'tracker.html': ((SOURCE / 'tracker.html').read_bytes(), 0o444),
     }
 
 
 def install(destination, files):
     if destination.is_symlink() or (destination / 'approval-lib').is_symlink():
         raise ValueError('Refusing symlink installation directory')
+    legacy_ui = destination / 'tracker.html'
+    if legacy_ui.is_symlink() or (legacy_ui.exists() and not legacy_ui.is_file()):
+        raise ValueError('Refusing unexpected legacy UI path')
     for name, (content, mode) in files.items():
         target = destination / name
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -64,6 +66,8 @@ def install(destination, files):
         finally:
             if os.path.exists(temporary):
                 os.unlink(temporary)
+    if legacy_ui.exists():
+        legacy_ui.unlink()
     return {name: hashlib.sha256(content).hexdigest() for name, (content, _) in files.items()}
 
 

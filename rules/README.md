@@ -112,15 +112,15 @@ test runners and installation retain their existing approval boundaries.
 Two additional reviewed direct executables are allowed:
 
 ```sh
-/Users/ryanudelhoven/.local/share/codex-publish/codex-approval-tracker serve
+/Users/ryanudelhoven/.local/share/codex-publish/codex-approval-tracker status
 /Users/ryanudelhoven/.local/share/codex-publish/codex-skill-usage status
 ```
 
 These are copies of the scripts observed in at least three approval requests,
 with isolated system Python and fixed protected dependencies. Arguments may vary
-within their parsers: dashboard/status/annotations/private exports, and local skill
+within their parsers: status/annotations/private exports, and local skill
 run markers/numeric telemetry. They never execute supplied commands or arbitrary
-Python code. The dashboard binds loopback and requires its random token.
+Python code. No server or UI assets are installed.
 
 Review `scripts/install-tracker-allowances.py`, test with a temporary
 `--destination`, then explicitly approve installing to the protected directory.

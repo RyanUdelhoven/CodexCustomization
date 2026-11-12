@@ -1,49 +1,26 @@
-# Local approval tracker
+# Approval record commands
 
-## Open and inspect
+Use `~/.local/share/codex-publish/codex-approval-tracker` directly when installed. Otherwise use `python3 ~/.codex/skills/approval-review/scripts/approval_tracker.py` under normal permissions. There is no dashboard or server.
 
-Run `~/.local/share/codex-publish/codex-approval-tracker serve` when installed. This reviewed isolated executable and its dependencies live outside the writable workspace and have a direct allowance. Otherwise use `python3 ~/.codex/skills/approval-review/scripts/approval_tracker.py serve` under normal permissions, requesting loopback access if blocked. It prints a private tokenized localhost URL on a dynamically allocated port. Open that exact URL and keep its process alive while the dashboard is needed. Use an existing running dashboard rather than spawning duplicates. This is an on-demand local process, not a login service; restart with the same command after it stops. No third-party libraries or paid services are required.
+## Read and review
 
-The dashboard refreshes every ten seconds, pausing while details are expanded to preserve reading position; Refresh always reloads. It provides search, project/tool/status/outcome/date filters, sorting, expandable full commands, exact-repeat groups, original-event drilldown, and redacted metadata export. Candidate counts cover the whole group; filters determine which groups appear. Grouping is conservative and never implies an allowance. Missing-command events are not treated as identical commands. Compound commands and quoting remain intact.
+`status` prints compact counts, last capture, review statuses and token-accounting metadata. It omits full commands and request samples. Use `codex-approval-review prepare --limit 50` for incremental approval investigation; status and exports do not consume a review batch.
 
-`~/.local/share/codex-publish/codex-approval-tracker status` reports counts, last capture, and annotation totals without printing commands. Use the same executable for `label-task`, `annotate`, and `export` in the examples below when installed; source commands remain the prompted fallback. A running dashboard serves the current JSONL and SQLite annotations; the original log remains authoritative. Corrupt logs return an unavailable error rather than silently dropping evidence.
+`export --output /absolute/new-file.json` writes redacted metadata. Add `--include-sensitive` to inspect full evidence privately when the user's question calls for it. Filter the exported records to answer the user's prompt, retaining event IDs and exact commands. Exports contain exact-repeat groups, task labels, review annotations, skill runs and token samples. Missing commands are not grouped as identical requests. Never execute captured commands to discover effects or infer safety from frequency.
 
-## Enrich and annotate
+The authoritative JSONL, SQLite annotations and skill-run journals remain under `$CODEX_HOME/.local/approval-review`, defaulting to `~/.codex/.local/approval-review`. Do not commit them. Corrupt logs stop inspection rather than silently dropping evidence. Exports use mode 0600, refuse overwriting, and omit free text unless explicitly requested through --include-sensitive.
 
-Task/session IDs come from hook events. Titles are unknown until verified. Use native chat tools for targeted lookups of the sessions being investigated; never scan unrelated history or open transcripts automatically. Save a verified title with:
+## Update review metadata
 
-```text
-python3 ~/.codex/skills/approval-review/scripts/approval_tracker.py label-task --session SESSION_ID --title "Verified title" --source "Native chat tool, date or source reference"
-```
+`label-task --session SESSION_ID --title "Verified title" --source "Evidence reference"` saves a verified task label. Use native chat tools for targeted identity lookup; never scan unrelated history or transcripts automatically. Missing metadata stays unknown. Project labels derive from recorded working directories and currently existing repository roots; exports expose the source and its limitations.
 
-Project names derive from the recorded working directory and nearest currently existing repository root. The UI exposes that source; directory renames, deleted checkouts, or subdirectory work may limit identification. Legacy events retain missing metadata rather than receiving invented capture-time policy hashes.
+`annotate --event EVENT_ID --status investigating --notes "Investigate the full command"` replaces the complete current annotation and preserves previous versions in audit history. Include every field to retain. Optional fields: `--outcome`, `--evidence`, `--proposed-rule`, `--verification`.
 
-Save a complete review annotation with:
+Statuses: new, investigating, rule_proposed, resolved, intentionally_prompted.
+Outcomes: unknown, human_prompt_confirmed, user_approved, user_denied, automatic_allow, automatic_deny, execution_confirmed. Confirmed outcomes require an evidence reference. Later execution does not prove human approval. Annotation status and incremental review checkpoints are independent. Proposed rules remain notes until the user requests implementation; rule updates require combined-policy checks.
 
-```text
-python3 ~/.codex/skills/approval-review/scripts/approval_tracker.py annotate --event EVENT_ID --status investigating --notes "Investigate the full compound command"
-```
+## Capture and verification
 
-Statuses: `new`, `investigating`, `rule_proposed`, `resolved`, `intentionally_prompted`.
-Optional fields: `--outcome`, `--evidence`, `--proposed-rule`, `--verification`.
-Outcomes: `unknown`, `human_prompt_confirmed`, `user_approved`, `user_denied`, `automatic_allow`, `automatic_deny`, `execution_confirmed`.
+PermissionRequest records supported request metadata without changing decisions. Keep the sound handler separate. Preserve shell commands, provided reasons/prefixes, IDs, working directories, model and user-policy fingerprints. Omit arbitrary non-shell tool arguments. Deduplicate only reliable matching supplied delivery IDs. Transcript paths remain pointers. Legacy missing fields remain unknown.
 
-Any confirmed outcome requires a nonempty evidence reference. A later execution result cannot prove user approval. An annotation replaces the current annotation in full; supply every field to retain. Previous versions and title sources remain in SQLite audit history. Annotation status is independent of incremental review checkpoints; neither silently marks the other completed. Proposed-rule text is an investigative note, never installed or executed.
-
-## Exports and privacy
-
-```text
-python3 ~/.codex/skills/approval-review/scripts/approval_tracker.py export --output /absolute/new-file.json
-```
-
-Exports default to timestamps, event/group IDs, statuses, outcomes, and counts. They omit commands, names, paths, tools, notes, reasons, rules, and other free text rather than guessing which strings contain secrets. Explicit `--include-sensitive` includes full evidence; keep it private. Export files use mode 0600 and refuse overwriting. SQLite lives beside the JSONL under the private data directory, outside Git. The read-only HTTP server binds loopback and requires its random URL token; do not publish that URL or forward its port.
-
-## Capture and coverage
-
-The existing PermissionRequest handler captures supported events without changing decisions. The sound handler remains separate. Shell command, reason, supplied prefix, IDs, working directory, model, and a user-policy fingerprint are recorded when available. Other tools retain metadata, not arbitrary document content. Delivery deduplication requires supplied session/tool IDs plus matching captured input; without reliable IDs, preserve requests separately. Distinct turns or changed input stay distinct.
-
-Check the next naturally occurring request against its recorded session, exact command, and event ID. Synthetic tests establish recorder behavior only. A request observation does not establish a visible human prompt. Some tool paths may omit hooks. Hook trust/activation is managed through Codex Settings > Hooks or `/hooks`; never modify trust hashes or bypass trust review. See [official hook documentation](https://learn.chatgpt.com/docs/hooks).
-
-## Verification
-
-Run `python3 -m unittest discover -s skills/approval-review/scripts -p 'test_approval*.py'` from the customization root. HTTP integration tests require loopback binding. Exercise search, an expanded command, candidate drilldown, and export at the actual printed URL. Keep live capture, backend tests, and browser verification evidence distinct. Ordinary approval requests run capture only; they must not open the dashboard or initiate policy review.
+Run `python3 -m unittest discover -s skills/approval-review/scripts -p 'test_*.py'`. Verify capture, exports, annotations, token intervals and rejection of the removed serve command. Natural request observations verify live capture separately from tests; they do not prove a human saw a prompt. Hook trust belongs to Codex Settings > Hooks or /hooks; never edit trust hashes. See https://learn.chatgpt.com/docs/hooks.
