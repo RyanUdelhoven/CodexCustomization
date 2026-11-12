@@ -1,6 +1,7 @@
 {
-  "description": "Record local permission requests and play Navi Hey, with a one-in-six chance of Listen.",
+  "description": "Record permission requests, play Navi on approval, and randomized OoT sounds on turn completion.",
   "hooks": {
+    "Stop": [{"hooks": [{"type": "command", "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/scripts/turn-end-sound.py\"", "timeout": 5}]}],
     "PreModelRequest": [{"hooks": [{"type": "command", "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/skills/approval-review/scripts/skill_usage.py\" capture", "timeout": 5}]}],
     "PostModelRequest": [{"hooks": [{"type": "command", "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/skills/approval-review/scripts/skill_usage.py\" capture", "timeout": 5}]}],
     "PermissionRequest": [
