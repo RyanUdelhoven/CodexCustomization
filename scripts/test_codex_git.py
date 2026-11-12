@@ -66,6 +66,15 @@ class PublicationTests(unittest.TestCase):
         self.assertFalse(receipt['tracking']['single_chat_candidate'])
         self.assertTrue(self.publisher.finish('codex/example', CHAT)['closed'])
 
+    def test_creation_without_host_stays_single_chat_after_publish(self):
+        subprocess.run(['/usr/bin/python3', str(self.root / 'branch_chats.py'),
+            'register', '--repo', str(self.repo), '--branch', 'codex/example',
+            '--chat-id', CHAT, '--created'], check=True, capture_output=True)
+        receipt = self.publisher.publish('codex/example', CHAT)
+        self.assertTrue(receipt['tracking']['single_chat_candidate'])
+        self.assertEqual(receipt['tracking']['record']['origin']['hostId'], 'local')
+        self.assertTrue(self.publisher.finish('codex/example', CHAT)['closed'])
+
     def test_inspect_preserves_refs_files_and_tracking(self):
         before = git('show-ref', cwd=self.repo)
         result = self.publisher.inspect('codex/example', CHAT)

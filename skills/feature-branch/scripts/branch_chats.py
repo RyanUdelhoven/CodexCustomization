@@ -47,6 +47,26 @@ def validate_record(record):
         raise ValueError("Inconsistent incomplete history")
 
 
+def normalize_local_identity(identity):
+    """An omitted host in this local tracker is the publisher's local host alias."""
+    result = dict(identity)
+    if result["source"] == "codex" and not result["hostId"]:
+        result["hostId"] = "local"
+    return result
+
+
+def normalize_record(record):
+    # Preserve lifecycle evidence and distinct explicit hosts; never merge remote hosts.
+    participants = []
+    for identity in record["participants"]:
+        identity = normalize_local_identity(identity)
+        if identity not in participants:
+            participants.append(identity)
+    record["participants"] = participants
+    if record["origin"] is not None:
+        record["origin"] = normalize_local_identity(record["origin"])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["register", "inspect", "close"])
@@ -84,11 +104,13 @@ def main():
         records = data["lifecycles"]
         for prior in records:
             validate_record(prior)
+            normalize_record(prior)
         record = records[-1] if records else None
         if args.action == "register":
             # Confirm existence before recording either creation or management.
             tip = git(args.repo, "rev-parse", "--verify", "refs/heads/" + args.branch)
-            identity = {"source": args.source, "hostId": args.host_id, "threadId": args.chat_id}
+            identity = normalize_local_identity(
+                {"source": args.source, "hostId": args.host_id, "threadId": args.chat_id})
             if args.created:
                 if record and not record["closed"]:
                     raise ValueError("An open lifecycle exists; do not overwrite its history")
