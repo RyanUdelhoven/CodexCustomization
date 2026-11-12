@@ -15,6 +15,8 @@ Check Docker CLI, Compose, daemon availability, and host architecture. On Apple 
 
 Create or minimally amend Dockerfile, .dockerignore, Compose configuration, and concise run instructions. Prefer a Coulson-recognizable compose.yml when creating new packaging for that workflow; preserve an existing filename unless compatibility requires a scoped change.
 
+For Coulson integration, Docker Compose is the required startup method under coulson-ready unless the user explicitly overrides it. Missing packaging belongs to this skill; missing tooling or incompatibility must be resolved or reported rather than bypassed with native startup. Preserve independent local development commands and app-specific packaging conventions.
+
 Use compatible maintained base images, lockfile-based installs, cache-friendly dependency layers, and multi-stage builds when they reduce runtime contents. Run as a non-root user where the stack permits, use signal-correct startup commands, and provide writable-path ownership. Never copy host node_modules or virtual environments into the image. Exclude credentials, local environment files, VCS data, and irrelevant artifacts without excluding required build inputs. Pass build credentials through supported secret mounts, not image layers.
 
 Keep runtime secrets outside committed files and images; provide variable names and safe example values. Distinguish build-time frontend variables from runtime configuration. A browser cannot resolve Compose service names: use browser-accessible API URLs or same-origin routing; service names are for container-to-container traffic.

@@ -13,7 +13,7 @@ Identify the absolute project root, named service, transport (default TCP), host
 
 Inspect relevant existing Compose/Coulson registrations and project configuration. Import known fixed assignments before allocating new ones. Registry coverage is limited to imported projects; checking listeners cannot reveal unregistered stopped apps. Do not claim a complete machine inventory without actually identifying the projects in scope. Do not scan unrelated private directories by default.
 
-Preserve working verified dynamic allocation, including native apps accepting Coulson's PORT. Docker container-internal ports may repeat; coordinate only published host ports. Avoid publishing private databases merely to assign them ports. Default new local bindings to loopback, preserving deliberate existing access requirements.
+Preserve working verified dynamic allocation. Port bookkeeping does not select an app's provider: coulson-ready requires Docker Compose for Coulson setup unless explicitly overridden by the user. Do not retain or choose native Coulson startup merely to preserve dynamic allocation; coordinate published ports for the authorized migration. Docker container-internal ports may repeat; coordinate only published host ports. Avoid publishing private databases merely to assign them ports. Default new local bindings to loopback, preserving deliberate existing access requirements.
 
 ## Use the registry
 
