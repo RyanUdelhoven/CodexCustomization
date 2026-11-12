@@ -12,9 +12,10 @@ The absolute helper and interpreter paths target Ryan's Mac; review those paths
 before installing elsewhere. Rules apply to outside-sandbox requests, not every
 command executed inside the sandbox. Existing Git rules remain separate.
 
-Basic readers and selected diagnostic prefixes run without approval. Raw `rg`,
-`sed`, `find`, `curl`, and `date` require approval outside the sandbox because
-prefix matching cannot validate all their arguments. Use the executable helper:
+Basic readers and selected diagnostic prefixes run without approval. Previously
+saved command allowances remain effective. For mixed-capability tools such as
+`rg`, `sed`, `find`, `curl`, and `date`, prefer the restricted executable helper
+when no saved allowance covers the intended command:
 
 ```sh
 /Users/ryanudelhoven/.local/share/codex-publish/codex-read search --glob '*.py' 'def main' scripts
@@ -30,21 +31,23 @@ configuration disabled and a minimal environment. File discovery does not follow
 directory symlinks. Health checks only perform GET `/health` against the hosts and
 ports listed in the helper, connect directly to loopback, and never follow redirects.
 The reviewed executable must be installed outside agent-writable workspaces.
-Its writable source at `scripts/codex-read` retains an explicit prompt rule,
-overriding historical allow grants. Installing or updating the protected copy
-requires approval; the rule never approves a general installer or interpreter.
+Its protected installed copy remains the preferred entry point. An explicit
+historical grant for its writable source is restored at the user's request;
+that grant does not make future source edits a reviewed protected installation.
+New installation commands require normal approval unless a saved exception
+already covers them. No general installer or interpreter allowance was added.
 Time uses Python's clock reader rather than the system date-setting command.
 The hardware check uses fixed sysctl arguments; a raw sysctl prefix would permit
 additional operands that set values, so raw sysctl requires approval too.
 
-Python, Ruby, shell invocations, observed Node execution forms, tests, file
-mutations, container execution, service changes, API calls, and extraction require
-approval outside the sandbox. Existing grants for these prefixes are overridden
-by the more restrictive prompt decision. Other previously approved categories,
-including Git and `npm run build`, remain governed by their existing rules.
-Unlisted Node scripts and reordered flags receive no new allowance. Prefix rules
-are not a complete executable or argument firewall; alternate paths and spellings
-may receive no match and fall back to the normal approval policy.
+Previously saved script, shell, copy, network, and installation exceptions retain
+their original scope. Removed only terminal prompt rules that suppressed those
+exceptions; unrelated prompt/forbidden rules, including Git publication and main
+branch protection, remain unchanged. Commands without a matching allowance use
+the normal approval policy; absence of an explicit rule is not an allow decision.
+No blanket Python, shell, or code-execution allowance was added. Prefix rules
+accept trailing arguments, so a restored legacy exception is not necessarily a
+read-only classification. Prefer protected tools when available.
 
 Check all installed rules without executing a candidate command:
 
@@ -105,7 +108,8 @@ Use `--destination /temporary/staging/path` for isolated checks. The default
 installation directory is protected and requires approved execution. It also
 updates the publisher's `branch_chats.py` dependency to the reviewed tracker.
 Source changes alone never replace installed copies. General Python, arbitrary
-test runners and installation retain their existing approval boundaries.
+test runners and new installers receive no new allowance; saved historical
+exceptions remain effective.
 
 ## Tracker script allowances (November 11, 2026)
 
@@ -130,12 +134,36 @@ Source edits do not update installed copies; reviewed reinstallation remains req
 
 Existing protected validator, branch tracker, recorder, and secret checker already
 cover four other recurring script families. Use those direct entry points rather
-than their prompted Python source forms. General Python, inline code, installers,
-`unittest discover`, and `npm test` remain prompted: their names do not freeze the
-code they execute. Frequency is a review threshold, not a blanket code allowance.
+than their Python source forms. General Python, inline code, new installers and
+test discovery receive no blanket allowance: their names do not freeze the code
+they execute. Previously saved exceptions remain effective. Frequency is a review
+threshold, not a blanket code allowance.
 
 Restart Codex after changing rules. Combined policy checks predict decisions;
 successful execution alone does not confirm the absence of a visible prompt.
+
+## Read-only tools and restored prior allowances (November 11, 2026)
+
+The native macOS `/usr/bin/stat`, `readlink`, `basename`, `dirname`, `cmp`,
+`comm`, `id`, `whoami`, and `groups` paths are allowed. Each full path is listed
+explicitly; this does not allow every program in `/usr/bin` or other `bin` folders.
+The installed macOS manuals were checked for mutation, output-file and command
+execution options. Existing file readers and the restricted helper remain available.
+
+At the user's explicit request, removed 14 later terminal prompt overrides that
+suppressed 124 already-saved command allowances. The saved default rules were
+left intact. Those legacy exceptions include specific script, shell, network,
+copy and installation commands; restoration is not a read-only classification.
+All 124 exact prior patterns changed from prompt to allow in combined policy checks.
+Other prompt/forbidden rules and normal handling of unmatched commands remain.
+
+Do not reintroduce broad prompts that silently override those saved exceptions.
+When a new restriction is needed, identify which existing allowances it changes
+and obtain the user's direction. Prefer protected reviewed copies where available.
+
+Restart Codex to load changes. The private review directory contains the pre-change
+terminal policy backup, restore plan and per-pattern comparison; no global sandbox
+setting or filesystem access mode was changed by this policy restoration.
 
 ## Merge and push workflow
 

@@ -19,7 +19,7 @@ def main():
                 listen = sounds / "navi-listen.mp3"
             clips.append(listen)
     for clip in clips:
-        subprocess.run(["/usr/bin/afplay", "--volume", "0.25", str(clip)], check=True)
+        subprocess.run(["/usr/bin/afplay", "--volume", "0.75", str(clip)], check=True)
 
 
 if __name__ == "__main__":
