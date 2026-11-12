@@ -57,6 +57,10 @@ When the user requests coverage of many listed items:
 
 Whenever you author a new Codex skill, apply `skill-deconfliction` from `~/.codex/skills/skill-deconfliction/SKILL.md` before installing it. Review the draft against available skills, align affected writable custom skills, then validate and install the draft.
 
+## Skill usage measurement
+
+When applying a skill, record an explicit run with `python3 ~/.codex/skills/approval-review/scripts/skill_usage.py start --session VERIFIED_CHAT_ID --skills SKILL_NAME --cwd PROJECT_PATH --task TASK_TITLE` before its substantive workflow. Use exact skill identifiers, only for skills actually applied. Batch skills that begin together; reuse an existing active run rather than duplicating it. Retain returned run IDs and finish them when their workflows end with `python3 ~/.codex/skills/approval-review/scripts/skill_usage.py finish --runs RUN_ID ...`. Finish remaining runs before the final response; never close another chat's runs. Pass `--agent-id` when a verified subagent identity is available; otherwise the run includes the chat's agents. If capture is unavailable, continue the authorized task and report coverage as unknown. Do not scan transcripts or invent historical boundaries. Measurements include instrumentation overhead and shared model requests; they do not establish causal skill costs or savings. This recording does not trigger a token audit or approval-rule review. User requests to skip measurement override this default.
+
 ## Global Obsidian vault protection
 
 These standing rules apply across projects to `/Users/ryanudelhoven/Documents/Notes` and all its contents.

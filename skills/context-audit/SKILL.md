@@ -19,6 +19,8 @@ and relevant configuration.
 Use authorized session records when available. Obtain explicit authorization before
 reading private histories, transcripts, or memory outside the supplied task context.
 
+When explicit skill-run measurements exist in the approval-review tracker, reuse its interval and per-attempt evidence before collecting transcripts or building another recorder. Approval-review owns measurement capture and presentation; this skill owns requested efficiency analysis. Shared runs are not additive, and workflow totals do not establish causal skill overhead or savings. Routine skill markers and passive model hooks do not activate this audit.
+
 If records are unavailable, perform a static audit and state its limits.
 Do not install tools or change configuration merely to collect measurements.
 

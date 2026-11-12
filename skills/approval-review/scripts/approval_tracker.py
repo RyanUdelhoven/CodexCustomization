@@ -15,6 +15,7 @@ import sys
 from urllib.parse import urlsplit, parse_qs
 
 from approval_log import Store, now
+from skill_usage import Usage
 
 STATUSES = ('new', 'investigating', 'rule_proposed', 'resolved', 'intentionally_prompted')
 OUTCOMES = ('unknown', 'human_prompt_confirmed', 'user_approved', 'user_denied',
@@ -117,6 +118,10 @@ class Tracker:
                     'coverage': 'Hook observations only; live activation and human prompts require independent verification.',
                     'rows': list(reversed(rows)), 'candidates': candidates,
                     'statuses': dict(Counter(r['status'] for r in rows))}
+        snapshot['skill_usage'] = Usage(self.store.home).snapshot(events)
+        for row in snapshot['rows']:
+            row['skill_run_ids'] = [r['id'] for r in snapshot['skill_usage']['runs']
+                                    if row['id'] in r['approval_request_ids']]
         if redacted:
             # Allowlist export fields rather than guessing where credentials appear.
             # Exclude project/task names, paths, commands, prefix rules and all free text.
@@ -125,6 +130,11 @@ class Tracker:
             snapshot['candidates'] = [{k: g[k] for k in ('group_id', 'count', 'event_ids')}
                                       for g in candidates]
             snapshot['redacted'] = True
+            snapshot['skill_usage']['runs'] = [
+                {k: r[k] for k in ('id', 'state', 'started_at', 'finished_at', 'tokens',
+                                   'request_count', 'reported_requests', 'missing_usage_requests',
+                                   'coverage', 'shared_request_count', 'confidence')}
+                for r in snapshot['skill_usage']['runs']]
         return snapshot
 
 

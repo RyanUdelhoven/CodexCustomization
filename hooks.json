@@ -1,6 +1,8 @@
 {
   "description": "Record local permission requests and play Navi Hey, with a one-in-six chance of Listen.",
   "hooks": {
+    "PreModelRequest": [{"hooks": [{"type": "command", "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/skills/approval-review/scripts/skill_usage.py\" capture", "timeout": 5}]}],
+    "PostModelRequest": [{"hooks": [{"type": "command", "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/skills/approval-review/scripts/skill_usage.py\" capture", "timeout": 5}]}],
     "PermissionRequest": [
       {
         "hooks": [

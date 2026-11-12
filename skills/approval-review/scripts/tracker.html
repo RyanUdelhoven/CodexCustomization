@@ -6,24 +6,53 @@
 </style>
 <h1>Approval tracker</h1><p>Find recurring requests. Keep the command evidence. Review rules deliberately.</p>
 <p id="health" role="status">Loading local records…</p><p id="error" role="alert"></p>
-<nav aria-label="Views"><button id="history" aria-pressed="true">Request history</button><button id="candidates" aria-pressed="false">Rule candidates</button><button id="refresh">Refresh</button><a id="export" download="approvals-redacted.json">Export redacted metadata</a></nav>
+<nav aria-label="Views"><button id="history" aria-pressed="true">Request history</button><button id="candidates" aria-pressed="false">Rule candidates</button><button id="skills" aria-pressed="false">Skill runs</button><button id="refresh">Refresh</button><a id="export" download="approvals-redacted.json">Export redacted metadata</a></nav>
 <div class="filters"><input id="query" aria-label="Search requests" placeholder="Search commands, projects, tasks, notes…"><select id="project" aria-label="Project"><option value="">All projects</option></select><select id="tool" aria-label="Tool"><option value="">All tools</option></select><select id="status" aria-label="Review status"><option value="">All review statuses</option></select><select id="outcome" aria-label="Outcome"><option value="">All outcomes</option></select><label>From <input id="from" type="date"></label><label>Through <input id="to" type="date"></label><select id="sort" aria-label="Sort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="repeats">Most repeated</option></select></div>
-<p id="count"></p><div class="scroll"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div><p id="empty" hidden>No requests match. If capture is empty, verify hook activation; coverage is unknown.</p>
+<p id="usage-basis" hidden></p><p id="count"></p><div class="scroll"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div><p id="empty" hidden>No matching records. Missing capture is unknown coverage, not proven zero usage.</p>
 <p>Review annotations and verified task labels persist locally through the skill’s annotate and label-task commands. Requests never change rules automatically. Non-shell tool arguments are intentionally omitted.</p>
 <script>
 const $=id=>document.getElementById(id), token=new URLSearchParams(location.search).get('token');
-let data={rows:[],candidates:[]},view='history',group='';
+let data={rows:[],candidates:[]},view=location.hash==='#skills'?'skills':'history',group='';
 $('export').href='/export?token='+encodeURIComponent(token);
 function el(tag,text){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e}
 function cell(tr,text){const td=el('td',text);tr.append(td);return td}
 function details(td,title,body){const d=el('details'),s=el('summary',title);d.append(s,el('pre',body));td.append(d)}
-function options(id,values){const select=$(id),old=select.value,first=select.options[0].text;select.replaceChildren(new Option(first,''));[...new Set(values.filter(Boolean))].sort().forEach(v=>select.add(new Option(v,v)));select.value=old}
+function options(id,values){if(id==='project')values=values.concat((data.skill_usage?.runs||[]).map(r=>r.cwd.split('/').filter(Boolean).pop()));const select=$(id),old=select.value,first=select.options[0].text;select.replaceChildren(new Option(first,''));[...new Set(values.filter(Boolean))].sort().forEach(v=>select.add(new Option(v,v)));select.value=old}
 async function load(){try{const response=await fetch('/data?token='+encodeURIComponent(token),{cache:'no-store'});if(!response.ok)throw Error('Records unavailable (HTTP '+response.status+').');data=await response.json();$('error').textContent='';$('health').textContent=data.count+' captured requests · Last capture: '+(data.last_capture?new Date(data.last_capture).toLocaleString():'none')+' · '+data.coverage;options('project',data.rows.map(r=>r.project));options('tool',data.rows.map(r=>r.tool_name));options('status',data.rows.map(r=>r.status));options('outcome',data.rows.map(r=>r.outcome));render()}catch(e){$('error').textContent=e.message+' Previous results may be stale.'}}
 function render(){const q=$('query').value.toLowerCase(),start=$('from').value,end=$('to').value;let rows=data.rows.filter(r=>(!group||r.group_id===group)&&JSON.stringify(r).toLowerCase().includes(q)&&(!$('project').value||r.project===$('project').value)&&(!$('tool').value||r.tool_name===$('tool').value)&&(!$('status').value||r.status===$('status').value)&&(!$('outcome').value||r.outcome===$('outcome').value)&&(!start||new Date(r.timestamp)>=new Date(start+'T00:00:00'))&&(!end||new Date(r.timestamp)<new Date(new Date(end+'T00:00:00').setDate(new Date(end+'T00:00:00').getDate()+1))));rows.sort((a,b)=>$('sort').value==='repeats'?b.repeat_count-a.repeat_count:$('sort').value==='oldest'?a.timestamp.localeCompare(b.timestamp):b.timestamp.localeCompare(a.timestamp));$('rows').replaceChildren();$('head').replaceChildren();const h=el('tr');(view==='history'?['Requested at','Project / task','Full command / justification','Outcome / review','Repeats']:['Exact command pattern','Requests / projects','Proposed rules','Evidence']).forEach(t=>h.append(el('th',t)));$('head').append(h);let shown=0;
 if(view==='history'){for(const r of rows){const tr=el('tr');cell(tr,new Date(r.timestamp).toLocaleString());const context=cell(tr,r.project+' / '+r.task_title);details(context,'Context',JSON.stringify({working_directory:r.command_cwd||r.cwd,project_root:r.project_root,project_source:r.project_source,session_id:r.session_id,title_source:r.task_title_source,turn_id:r.turn_id,tool:r.tool_name,event_id:r.id,policy_hash:r.policy_hash||'Unavailable for legacy event',transcript_path:r.transcript_path,permission_mode:r.permission_mode},null,2));const command=cell(tr);details(command,r.command_text?r.command_text.slice(0,130):'Command unavailable',r.command_text||'Non-shell arguments omitted or unavailable');details(command,'Approval explanation / requested prefix',(r.reason||'Unavailable')+'\nRequested prefix: '+JSON.stringify(r.requested_prefix||null));const review=cell(tr,r.outcome+' / '+r.status);details(review,'Review evidence and notes',JSON.stringify({evidence:r.evidence,notes:r.notes,proposed_rule:r.proposed_rule,verification:r.verification},null,2));cell(tr,String(r.repeat_count));$('rows').append(tr);shown++}}
 else{const ids=new Set(rows.map(r=>r.id));for(const g of data.candidates.filter(g=>g.event_ids.some(id=>ids.has(id)))){const tr=el('tr');details(cell(tr),g.command?g.command.slice(0,150):g.tool,g.command||'Command unavailable');cell(tr,g.count+' / '+g.projects.join(', '));cell(tr,g.proposed_rules.join('\n')||'Awaiting investigation');const b=el('button','Inspect original requests');b.onclick=()=>{group=g.group_id;view='history';updateTabs();render()};cell(tr).append(b);$('rows').append(tr);shown++}}
 $('count').textContent=shown+(view==='history'?' requests':' command groups')+(group?' · Filtered to selected group; click Request history to clear':'');$('empty').hidden=shown>0}
-function updateTabs(){$('history').setAttribute('aria-pressed',String(view==='history'));$('candidates').setAttribute('aria-pressed',String(view==='candidates'))}
+$('sort').add(new Option('Most input tokens','input'));
+$('sort').add(new Option('Most output tokens','output'));
+const renderRequests=render;
+render=function(){
+  updateTabs();
+  for(const id of ['tool','status','outcome'])$(id).disabled=view==='skills';
+  $('usage-basis').hidden=view!=='skills';
+  if(view!=='skills'){renderRequests();return}
+  const usage=data.skill_usage||{runs:[],unique_tokens:{},unique_request_count:0};
+  const number=n=>n===null||n===undefined?'Unmeasured':n.toLocaleString();
+  $('usage-basis').textContent=(usage.basis||'No token evidence available.')+' Unique observed requests: '+usage.unique_request_count+'. Unique input / output: '+number(usage.unique_tokens.input_tokens)+' / '+number(usage.unique_tokens.output_tokens)+'. Last hook: '+(usage.last_hook_at?new Date(usage.last_hook_at).toLocaleString():'not observed; review the model hooks in Codex Settings > Hooks.');
+  const query=$('query').value.toLowerCase(),from=$('from').value,to=$('to').value;
+  const runs=usage.runs.filter(r=>[r.skill,r.cwd,r.task_title,r.state,r.session_id,r.id].join(' ').toLowerCase().includes(query)&&(!$('project').value||r.cwd.split('/').filter(Boolean).pop()===$('project').value)&&(!from||new Date(r.started_at)>=new Date(from+'T00:00:00'))&&(!to||new Date(r.started_at)<new Date(to+'T23:59:59.999')));
+  runs.sort((a,b)=>$('sort').value==='oldest'?a.started_at.localeCompare(b.started_at):$('sort').value==='repeats'?b.request_count-a.request_count:$('sort').value==='input'?(b.tokens.input_tokens??-1)-(a.tokens.input_tokens??-1):$('sort').value==='output'?(b.tokens.output_tokens??-1)-(a.tokens.output_tokens??-1):b.started_at.localeCompare(a.started_at));
+  $('head').replaceChildren();$('rows').replaceChildren();const heading=el('tr');
+  for(const title of ['Skill / project / task','Start / finish','Input','Cached input¹','Output','Reasoning²','Shared usage / coverage'])heading.append(el('th',title));
+  $('head').append(heading);
+  for(const r of runs){
+    const tr=el('tr'),identity=cell(tr,r.skill+' / '+r.cwd.split('/').filter(Boolean).pop()+' / '+r.task_title);
+    details(identity,'Run identity',JSON.stringify({run_id:r.id,session_id:r.session_id,cwd:r.cwd,agent_scope:r.agent_id||'All agents in session',confidence:r.confidence,approval_request_ids:r.approval_request_ids},null,2));
+    cell(tr,new Date(r.started_at).toLocaleString()+' → '+(r.finished_at?new Date(r.finished_at).toLocaleString():r.state));
+    for(const metric of ['input_tokens','cached_input_tokens','output_tokens','reasoning_output_tokens'])cell(tr,number(r.tokens[metric])+(r.coverage==='partial'?' (partial)':''));
+    const shared=cell(tr,(r.shared_with.length?r.shared_with.join(', '):'No shared requests observed')+' · '+r.reported_requests+'/'+r.request_count+' requests reported · '+r.coverage);
+    details(shared,'Request evidence',JSON.stringify({state:r.state,total_tokens:r.tokens.total_tokens,shared_requests:r.shared_request_count,missing_usage:r.missing_usage_requests,samples:r.samples},null,2));
+    $('rows').append(tr);
+  }
+  $('count').textContent=runs.length+' skill runs · ¹ Cached input is included in input. ² Reasoning is included in output. Shared run totals must not be added together.';
+  $('empty').hidden=runs.length>0;
+};
+function updateTabs(){for(const id of ['history','candidates','skills'])$(id).setAttribute('aria-pressed',String(view===id))}
 for(const id of ['query','project','tool','status','outcome','from','to','sort'])$(id).addEventListener('input',render);
-for(const v of ['history','candidates'])$(v).onclick=()=>{view=v;group='';updateTabs();render()};$('refresh').onclick=load;load();setInterval(()=>{if(!document.querySelector('details[open]'))load()},10000);
+for(const v of ['history','candidates','skills'])$(v).onclick=()=>{view=v;group='';location.hash=v==='skills'?'skills':'';updateTabs();render()};$('refresh').onclick=load;load();setInterval(()=>{if(!document.querySelector('details[open]'))load()},10000);
 </script></html>
