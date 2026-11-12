@@ -9,6 +9,28 @@ when the user issues a workflow command in an established repository/branch
 context. Follow [shortcut interpretation](rules/merge-push.md#contextual-shortcuts).
 Mentions, quotations, examples, and unrelated acronym discussions are not commands.
 
+## New app runtime and local use
+
+All new app projects must include working Docker packaging. Apply `dockerize-app`
+for Dockerfiles, Compose services, readiness, and persistence. This requirement
+applies whether or not the app will use Coulson or be deployed. Preserve existing
+projects' packaging during unrelated changes; do not silently migrate them.
+If an app's platform cannot reasonably run in Docker, explain the constraint and
+ask for an explicit exception rather than silently skipping containerization.
+
+Early in every new app project, before committing to its runtime or hosting setup,
+ask: "Should this app be registered with Coulson so you can run it locally for
+yourself without deploying it?" Include this in the initial clarification questions.
+An explicit Coulson choice already given for this app satisfies this requirement;
+do not ask again. Continue independent work while awaiting the answer, but do not
+register the app or assume consent from silence.
+
+If the answer is yes, apply `coulson-ready` and its managed Docker Compose workflow,
+including verified bookmark-triggered startup. If no, retain Docker packaging and
+omit Coulson registration. If Coulson cannot support the app's platform, explain
+that limitation when asking and resolve the local-use approach with the user.
+Local personal use through Coulson does not request public hosting or deployment.
+
 ## Writing style
 
 - Use active voice.
