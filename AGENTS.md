@@ -1,3 +1,36 @@
+## Codex customization project boundary
+
+Maintain `/Users/ryanudelhoven/.codex` only from the **Codex Customization**
+project, whose primary project folder is `/Users/ryanudelhoven/.codex`.
+This global rule applies in every project. Changing the shell working directory
+does not change a chat's originating project or authorize customization edits.
+
+In other projects, do not create, edit, rename, move, or delete user-maintained
+files in this directory, including global instructions, configuration, skills,
+rules, and scripts. Do not bypass this boundary through helpers, symlinks,
+subagents, shell commands, or permission escalation. Other projects' own local
+`.codex` directories remain within their normal scope. Normal Codex-managed
+runtime state, caches, logs, and required skill-usage or participation records
+may still update; these are not customization requests.
+
+When the user requests a customization change from another project, this standing
+instruction explicitly authorizes creating and starting a chat in **Codex
+Customization** for that request. Discover the destination with `list_projects`,
+verify its label and path above, and use `create_thread` with that project and
+the local environment. Transfer the requested outcome, relevant context, exact
+paths, constraints, and acceptance criteria in a self-contained prompt. Include
+the originating chat identity when available, omit secrets, and instruct the
+destination to perform the work. Carry only the requested customization scope;
+do not authorize unrelated changes, merging, pushing, or deployment. Return the
+created-chat reference and avoid duplicate execution or duplicate handoffs.
+
+If chat creation is unavailable, fails, or the destination cannot be verified,
+provide a fenced `text` block containing the complete copyable request and tell
+the user to paste it into a chat in **Codex Customization**. Also use this
+fallback if the user explicitly prefers copying. Do not make the customization
+change in the originating project. Within Codex Customization, perform the work
+directly without creating another handoff chat.
+
 ## Merge and push execution
 
 For merge/push requests, follow [the execution rules](rules/merge-push.md) before
