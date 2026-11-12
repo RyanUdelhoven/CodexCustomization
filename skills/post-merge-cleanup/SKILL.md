@@ -32,11 +32,15 @@ The receipt preserves participation evidence. This skill still owns app-history 
 
 ## Archive the completed chat
 
+The ownership and open-lifecycle checks below govern automatic archival and archival requested through `mpa`. A direct request to archive a specific chat (including the current chat) independently authorizes that chat operation, even after a lifecycle has closed. Verify the target, finish any explicitly required prerequisite work, and use the app archival tool; do not require branch tracking repairs or another confirmation. This direct request does not authorize archiving other participants' chats. Do not reinterpret `mpa` alone as an override of its safeguards.
+
 Inspect and retain the participation record before deleting branches.
 
 After a verified merge into the repository's primary/default branch and a successful push of that target to `origin`, archive the originating chat only if one verified chat managed the branch from creation through integration. Determine the primary branch from repository guidance or verified remote metadata; do not assume `main`. Merging into another target or pushing only another remote does not trigger archival. A failed push never triggers archival. Explicit instructions to retain the chat override this preference.
 
 Use the participation protocol above. Require a complete, open lifecycle, one distinct participant matching the recorded origin, and no evidence of other managing chats or missing history. The current integrating chat must match that origin. Verify that the chat's task is complete and no other active branch, unfinished work, or pending request in that chat would be hidden by archival. When merging multiple branches, assess all of them before any archival; if any participating branch has multiple managing chats, archive nothing for that merge workflow.
+
+Use the local tracker's normalized identities: an omitted Codex host and `local` represent the same local host for the same chat ID. Distinct explicit hosts remain distinct. Duplicate alias records alone do not prove multiple managing chats. A previously closed lifecycle remains ineligible for automatic archival; explain that a direct request to archive this chat can proceed independently, rather than implying Git work remains.
 
 When multiple chats managed a branch, archive none of those chats. After the successful push, report: “Multiple chats managed this branch; no chats were archived.” Name or link verified participants when useful. If evidence is incomplete instead, report that ownership could not be verified and no chats were archived; do not claim multiple chats without evidence. Missing tools or tracking never block authorized merge/push or branch cleanup.
 

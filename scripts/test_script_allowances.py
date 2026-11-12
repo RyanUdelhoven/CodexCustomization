@@ -13,6 +13,24 @@ YAML = ROOT / 'skills/analyze-youtube/.runtime/venv/lib/python3.12/site-packages
 
 
 class ScriptAllowanceTests(unittest.TestCase):
+    def test_legacy_aliases_normalize_without_losing_history_or_remote_hosts(self):
+        module = runpy.run_path(str(ROOT / 'skills/feature-branch/scripts/branch_chats.py'))
+        origin = {'source': 'codex', 'hostId': '', 'threadId': 'origin'}
+        record = {'id': 'lifecycle', 'creationTip': 'tip', 'origin': origin,
+            'trackedFromCreation': True, 'closed': True,
+            'participants': [origin, dict(origin, hostId='local'),
+                dict(origin, hostId='remote-host'),
+                {'source': 'chatgpt', 'hostId': '', 'threadId': 'origin'}]}
+        module['validate_record'](record)
+        module['normalize_record'](record)
+        module['validate_record'](record)
+        self.assertEqual(len(record['participants']), 3)
+        self.assertEqual(record['origin']['hostId'], 'local')
+        self.assertEqual(record['id'], 'lifecycle')
+        self.assertEqual(record['creationTip'], 'tip')
+        self.assertTrue(record['closed'])
+        self.assertTrue(record['trackedFromCreation'])
+
     @classmethod
     def setUpClass(cls):
         cls.temporary = tempfile.TemporaryDirectory()
@@ -72,7 +90,12 @@ class ScriptAllowanceTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 return json.loads(result.stdout)
             self.assertTrue(tracker('register', '--chat-id', 'origin', '--created')['single_chat_candidate'])
+            same = tracker('register', '--chat-id', 'origin', '--host-id', 'local')
+            self.assertTrue(same['single_chat_candidate'])
+            self.assertEqual(len(same['record']['participants']), 1)
             self.assertTrue(tracker('inspect')['single_chat_candidate'])
+            self.assertFalse(tracker('register', '--chat-id', 'origin', '--host-id', 'remote-host')['single_chat_candidate'])
+            self.assertFalse(tracker('register', '--chat-id', 'another-chat')['single_chat_candidate'])
             self.assertFalse(tracker('close')['single_chat_candidate'])
             self.assertFalse(marker.exists())
             self.assertEqual(git('rev-parse', '--abbrev-ref', 'HEAD'), 'main')
