@@ -1,12 +1,12 @@
 # Local capture and review state
 
-The installed `hooks.json` runs `scripts/approval_log.py capture` on PermissionRequest alongside the existing sound. The recorder reads JSON stdin and writes one JSONL record, with no stdout or approval decision. It stores exact Bash commands, provided reason and source IDs; other tool arguments are omitted to avoid indiscriminate document capture. Transcript paths are pointers only, never opened by the hook. Unknown fields are ignored. Sensitive values embedded in shell commands may remain in this private log; do not publish it.
+The installed `hooks.json` runs `scripts/approval_log.py capture` on PermissionRequest alongside the existing sound. The recorder reads JSON stdin and appends observational JSONL records, with no stdout or approval decision. It stores exact Bash commands, provided reason, prefix, source IDs, working directory, model, and a user-policy fingerprint; other tool arguments are omitted to avoid indiscriminate document capture. Reliable supplied delivery IDs permit duplicate suppression; requests without them remain separate. Transcript paths are pointers only, never opened by the hook. Unknown fields are ignored. Sensitive values embedded in shell commands may remain in this private log; do not publish it. For the searchable dashboard, annotations, and exports, read [the tracker](tracker.md).
 
 Records use private directories (0700), files (0600), locked appends, and no external services. Errors emit a short stderr diagnostic and return success so logging cannot grant or reject a request. Check errors or missing events explicitly; this is an experiment, not a complete audit boundary. PermissionRequest may precede another hook's automatic decision, and some paths may not invoke it. No PostToolUse hook is installed: execution alone cannot establish manual approval.
 
 ## Commands
 
-When installed, use `~/.local/share/codex-publish/codex-approval-review` directly.
+For incremental review commands, when installed, use `~/.local/share/codex-publish/codex-approval-review` directly.
 This reviewed recorder copy uses isolated system Python and needs no wrapper;
 replacing it requires reviewed installation. Otherwise use
 `python3 ~/.codex/skills/approval-review/scripts/approval_log.py` under normal

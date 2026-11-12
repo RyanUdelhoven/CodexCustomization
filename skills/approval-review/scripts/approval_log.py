@@ -85,21 +85,35 @@ class Store:
         if not isinstance(payload, dict) or payload.get('hook_event_name') != 'PermissionRequest':
             raise ValueError('Expected PermissionRequest object')
         fields = ('session_id', 'turn_id', 'tool_use_id', 'cwd', 'transcript_path',
-                  'tool_name', 'permission_mode')
+                  'tool_name', 'permission_mode', 'model')
         event = {k: payload[k] for k in fields if isinstance(payload.get(k), str)}
         tool_input = payload.get('tool_input')
         if isinstance(tool_input, dict):
             if payload.get('tool_name') == 'Bash':
-                command = tool_input.get('command')
+                command = tool_input.get('command', tool_input.get('cmd'))
                 if isinstance(command, (str, list)):
                     event['command'] = command
-            reason = tool_input.get('description')
+            reason = tool_input.get('description') or tool_input.get('justification')
             if isinstance(reason, str):
                 event['reason'] = reason
-        event.update(schema_version=1, id=str(uuid.uuid4()), timestamp=now(),
+            prefix = tool_input.get('prefix_rule')
+            if isinstance(prefix, list) and all(isinstance(x, str) for x in prefix):
+                event['requested_prefix'] = prefix
+            if isinstance(tool_input.get('workdir'), str):
+                event['command_cwd'] = tool_input['workdir']
+        event.update(schema_version=2, id=str(uuid.uuid4()), timestamp=now(),
                      observation='permission_request', approval_outcome='unknown')
-        encoded = (json.dumps(event, ensure_ascii=True) + '\n').encode()
         with self.locked():
+            event['policy_hash'] = self.policy()
+            # IDs are optional in PermissionRequest. Deduplicate only when supplied,
+            # retaining distinct retries with changed command/input or turn.
+            if event.get('session_id') and event.get('tool_use_id'):
+                identity = {k: v for k, v in event.items()
+                            if k not in ('id', 'timestamp', 'policy_hash')}
+                event['delivery_key'] = digest(json.dumps(identity, sort_keys=True).encode())
+                if any(r.get('delivery_key') == event['delivery_key'] for r in self.events()):
+                    return
+            encoded = (json.dumps(event, ensure_ascii=True) + '\n').encode()
             fd = os.open(self.root / 'events.jsonl', os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
             with os.fdopen(fd, 'ab') as handle:
                 handle.write(encoded)

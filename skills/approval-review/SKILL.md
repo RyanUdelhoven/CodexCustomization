@@ -1,6 +1,6 @@
 ---
 name: approval-review
-description: Investigate recurring Codex approval interruptions, review newly captured permission requests, and preserve user corrections while recommending bounded policy changes. Use for approval-history reviews and allow/prompt/reject tuning; ordinary permission requests do not trigger a review.
+description: Show the local approval-request tracker, search approval history, and investigate recurring Codex approval interruptions to recommend bounded permission rules. Ordinary permission requests trigger passive capture only, not an investigation or rule changes.
 ---
 
 # Review approval friction
@@ -8,6 +8,8 @@ description: Investigate recurring Codex approval interruptions, review newly ca
 Use local incident capture plus incremental investigation. Default to suggestions; a review request does not authorize installing new permission rules. Explicit implementation requests authorize the scoped change, subject to execution permissions. Never grant permissions merely because a command recurs or was approved once.
 
 ## Start with new evidence
+
+For “show approval requests,” “open the approval tracker,” filtering history, exports, task labels, or review annotations, use [the tracker](references/tracker.md). Viewing the tracker does not prepare or consume a review batch. For “review approval friction” or “find recurring approval requests,” use its grouped evidence alongside the incremental investigation below. The tracker owns presentation and annotations; this skill owns investigation and recommendations. Skill-creator owns authoring, and existing merge workflows retain publication ownership.
 
 Use the reviewed installed recorder `~/.local/share/codex-publish/codex-approval-review prepare` when available; otherwise run `python3 ~/.codex/skills/approval-review/scripts/approval_log.py prepare` under normal permissions. Use the same entry point for status and completion. Read its batch, local `corrections.md`, and the previous report when present. Operational details are in [local capture](references/local-capture.md). Local data lives at `$CODEX_HOME/.local/approval-review`, falling back to `~/.codex/.local/approval-review`; never commit it.
 
