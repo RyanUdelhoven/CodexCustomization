@@ -107,6 +107,36 @@ updates the publisher's `branch_chats.py` dependency to the reviewed tracker.
 Source changes alone never replace installed copies. General Python, arbitrary
 test runners and installation retain their existing approval boundaries.
 
+## Tracker script allowances (November 11, 2026)
+
+Two additional reviewed direct executables are allowed:
+
+```sh
+/Users/ryanudelhoven/.local/share/codex-publish/codex-approval-tracker serve
+/Users/ryanudelhoven/.local/share/codex-publish/codex-skill-usage status
+```
+
+These are copies of the scripts observed in at least three approval requests,
+with isolated system Python and fixed protected dependencies. Arguments may vary
+within their parsers: dashboard/status/annotations/private exports, and local skill
+run markers/numeric telemetry. They never execute supplied commands or arbitrary
+Python code. The dashboard binds loopback and requires its random token.
+
+Review `scripts/install-tracker-allowances.py`, test with a temporary
+`--destination`, then explicitly approve installing to the protected directory.
+It also refreshes the existing recorder to the reviewed schema used by the tracker.
+Copies use read-only modes and never import from the checkout or `PYTHONPATH`.
+Source edits do not update installed copies; reviewed reinstallation remains required.
+
+Existing protected validator, branch tracker, recorder, and secret checker already
+cover four other recurring script families. Use those direct entry points rather
+than their prompted Python source forms. General Python, inline code, installers,
+`unittest discover`, and `npm test` remain prompted: their names do not freeze the
+code they execute. Frequency is a review threshold, not a blanket code allowance.
+
+Restart Codex after changing rules. Combined policy checks predict decisions;
+successful execution alone does not confirm the absence of a visible prompt.
+
 ## Merge and push workflow
 
 `git-workflow.rules` is the canonical reviewed Git policy. Raw pushes and branch

@@ -2,11 +2,11 @@
 
 ## Open and inspect
 
-Run `python3 ~/.codex/skills/approval-review/scripts/approval_tracker.py serve` under normal permissions, requesting loopback access if the sandbox blocks binding. It prints a private tokenized localhost URL on a dynamically allocated port. Open that exact URL and keep its process alive while the dashboard is needed. Use an existing running dashboard rather than spawning duplicates. This is an on-demand local process, not a login service; restart with the same command after it stops. No third-party libraries or paid services are required.
+Run `~/.local/share/codex-publish/codex-approval-tracker serve` when installed. This reviewed isolated executable and its dependencies live outside the writable workspace and have a direct allowance. Otherwise use `python3 ~/.codex/skills/approval-review/scripts/approval_tracker.py serve` under normal permissions, requesting loopback access if blocked. It prints a private tokenized localhost URL on a dynamically allocated port. Open that exact URL and keep its process alive while the dashboard is needed. Use an existing running dashboard rather than spawning duplicates. This is an on-demand local process, not a login service; restart with the same command after it stops. No third-party libraries or paid services are required.
 
 The dashboard refreshes every ten seconds, pausing while details are expanded to preserve reading position; Refresh always reloads. It provides search, project/tool/status/outcome/date filters, sorting, expandable full commands, exact-repeat groups, original-event drilldown, and redacted metadata export. Candidate counts cover the whole group; filters determine which groups appear. Grouping is conservative and never implies an allowance. Missing-command events are not treated as identical commands. Compound commands and quoting remain intact.
 
-`python3 ~/.codex/skills/approval-review/scripts/approval_tracker.py status` reports counts, last capture, and annotation totals without printing commands. A running dashboard serves the current JSONL and SQLite annotations; the original log remains authoritative. Corrupt logs return an unavailable error rather than silently dropping evidence.
+`~/.local/share/codex-publish/codex-approval-tracker status` reports counts, last capture, and annotation totals without printing commands. Use the same executable for `label-task`, `annotate`, and `export` in the examples below when installed; source commands remain the prompted fallback. A running dashboard serves the current JSONL and SQLite annotations; the original log remains authoritative. Corrupt logs return an unavailable error rather than silently dropping evidence.
 
 ## Enrich and annotate
 

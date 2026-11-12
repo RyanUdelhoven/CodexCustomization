@@ -37,6 +37,8 @@ prefix_rule(pattern=["/Users/ryanudelhoven/.local/share/codex-publish/codex-appr
 prefix_rule(pattern=["/Users/ryanudelhoven/.local/share/codex-publish/codex-skill-validate"], decision="allow")
 prefix_rule(pattern=["/Users/ryanudelhoven/.local/share/codex-publish/codex-branch-chats"], decision="allow")
 prefix_rule(pattern=["/Users/ryanudelhoven/.local/share/codex-publish/secret_check.py"], decision="allow")
+prefix_rule(pattern=["/Users/ryanudelhoven/.local/share/codex-publish/codex-approval-tracker"], decision="allow", justification="Reviewed isolated tracker copy; loopback-only dashboard and local review data, no command execution.")
+prefix_rule(pattern=["/Users/ryanudelhoven/.local/share/codex-publish/codex-skill-usage"], decision="allow", justification="Reviewed isolated skill-usage recorder; local markers and numeric telemetry, no command execution.")
 prefix_rule(pattern=["/usr/bin/install", "-m", "555", "/private/tmp/codex-approval-review-reviewed", "/Users/ryanudelhoven/.local/share/codex-publish/codex-approval-review"], decision="prompt", justification="Replacing the approved recorder executable requires a fresh code review.")
 
 # Unrestricted variants can execute code, write files, change services, or send requests.

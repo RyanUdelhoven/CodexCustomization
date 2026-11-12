@@ -4,6 +4,8 @@ The dashboard's **Skill runs** view measures model attempts that start while exp
 
 ## Record an interval
 
+Prefer the reviewed installed `~/.local/share/codex-publish/codex-skill-usage` directly for `start`, `finish`, and `status`. Its isolated interpreter and protected dependencies avoid a general Python allowance. The source commands below are fallback examples when it is absent and retain normal approval. Hooks remain configured separately; installation alone does not change hook trust or reload the app.
+
 ```text
 python3 ~/.codex/skills/approval-review/scripts/skill_usage.py start --session VERIFIED_CHAT_ID --skills approval-review context-audit --cwd /absolute/project --task "Verified task title"
 python3 ~/.codex/skills/approval-review/scripts/skill_usage.py finish --runs RETURNED_RUN_ID_1 RETURNED_RUN_ID_2
@@ -36,6 +38,8 @@ Pre/Post pairing uses session, turn, agent, and supplied request identity when a
 Approval events in the same session and time window link as supporting evidence, not proof of command execution or token causation. Agent-specific runs may still list same-session approval events because PermissionRequest does not reliably expose agent identity. Historical approvals have no run totals without recorded boundaries.
 
 `skill_usage.py status` prints the local run measurements and hook health. Redacted dashboard/CLI exports include numeric measurements, coverage, and run IDs while omitting skills, names, session IDs, paths, sample identities, and task text. The dashboard remains read-only; marker commands own changes.
+
+The protected tracker/usage installation is produced by `scripts/install-tracker-allowances.py` after review. It copies the recorder, both entry points, their fixed local dependencies, and the dashboard HTML. No downloads or runtime imports from the checkout occur. Installing or replacing those copies requires approval. Source updates do not alter installed behavior; re-review and reinstall deliberately. The installer and arbitrary test discovery retain approval.
 
 ## Verify
 
