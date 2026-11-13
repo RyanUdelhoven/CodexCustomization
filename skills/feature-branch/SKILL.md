@@ -1,6 +1,6 @@
 ---
 name: feature-branch
-description: Create or reuse a relevant feature branch before repository edits, name the originating chat, and track participating chats for post-merge archival. Apply to implementation, fixes, refactors, tests, configuration, and repository documentation edits. Read-only investigation needs no branch.
+description: Create or reuse a relevant feature branch before repository edits, name the originating chat, and record participating chats for branch provenance. Apply to implementation, fixes, refactors, tests, configuration, and repository documentation edits. Read-only investigation needs no branch.
 ---
 
 # Work on a feature branch
@@ -17,7 +17,7 @@ Preserve existing changes. Do not reset, discard, automatically stash, or carry 
 
 When creating a new task branch, apply [chat naming](references/chat-title.md) once. Reusing that branch for a correction does not repeat renaming, remote-base discovery, creation proof, or participation registration already confirmed for this chat and lifecycle. Check current branch and worktree safety before edits; re-register only for a new chat or lifecycle, or recovery from a failed registration.
 
-When creating or managing a branch, follow [chat participation](references/chat-participation.md) to register the current chat before substantive work unless its registration is already confirmed for this lifecycle. Record creation only for a branch actually created in this chat. Reuse the same record across worktrees and register each additional managing chat. Tracking failures do not block authorized implementation, but they disable automatic archival. An existing branch without creation records remains ineligible.
+When creating or managing a branch, follow [chat participation](references/chat-participation.md) to register the current chat before substantive work unless its registration is already confirmed for this lifecycle. Record creation only for a branch actually created in this chat. Reuse the same record across worktrees and register each additional managing chat. Tracking failures do not block authorized implementation; report gaps without inventing creation history. Records never authorize publication or archival.
 
 Keep feature branches local unless the user requests a remote branch or the authorized task needs one for review, backup, or collaboration. Do not create a remote feature branch merely because a workflow requires publication; follow its authorized destination and lifecycle. Preserve existing remote branches until their authorized cleanup conditions hold.
 

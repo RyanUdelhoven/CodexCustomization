@@ -121,12 +121,14 @@ class Publisher:
         self.git('rev-parse', '--verify', 'refs/heads/' + branch)
         return self.tracking('register', branch, chat)
 
-    def publish(self, branch, chat):
+    def publish(self, branch, chat, expected_source=None):
         self.validate()
         current = self.git('symbolic-ref', '--short', 'HEAD')
         if current not in (branch, 'main'):
             raise ValueError('Checkout must be on the requested feature branch or main')
         source = self.git('rev-parse', '--verify', 'refs/heads/' + branch)
+        if expected_source is not None and source != expected_source:
+            raise ValueError('Feature tip differs from the verified commit; prepare again')
         # Check other worktrees before any mutation; never disturb their checked-out branches.
         worktrees = self.git('worktree', 'list', '--porcelain').split('\n\n')
         for block in worktrees:
@@ -211,17 +213,24 @@ def main(argv=None):
     parser.add_argument('repository', help='Known alias or absolute local repository path')
     parser.add_argument('branch')
     parser.add_argument('chat_id')
+    parser.add_argument('--expected-source', help='Publish only this verified 40-character commit')
     args = parser.parse_args(argv)
     if not re.fullmatch(r'codex/[a-z0-9]+(?:[-/][a-z0-9]+)*', args.branch):
         parser.error('Only codex/ feature branches with lowercase letters and digits are accepted')
     if not re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', args.chat_id):
         parser.error('Supply the verified Codex chat UUID')
+    if args.expected_source is not None and (
+            args.action != 'publish' or not re.fullmatch(r'[0-9a-f]{40}', args.expected_source)):
+        parser.error('--expected-source requires publish and a full lowercase commit SHA')
     try:
         repo, url = resolve_repository(args.repository)
     except (ValueError, OSError) as error:
         parser.error(str(error))
     publisher = Publisher(repo, url)
-    result = getattr(publisher, args.action)(args.branch, args.chat_id)
+    if args.action == 'publish':
+        result = publisher.publish(args.branch, args.chat_id, expected_source=args.expected_source)
+    else:
+        result = getattr(publisher, args.action)(args.branch, args.chat_id)
     print(json.dumps(result, indent=2))
 
 

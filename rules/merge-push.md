@@ -7,26 +7,49 @@ publication authorization, not this document.
 
 ## Contextual shortcuts
 
-Treat `mp` as “merge push” and `mpa` as “merge push archive” when used
-as a direct user instruction about the repository work under discussion.
-Match whole tokens, case-insensitively; allow ordinary punctuation and phrasing
-such as “please mp”. A standalone shortcut after implementation or verification
-is sufficient when the repository and intended branch are clear.
+Automatic merge, push, and chat archival are disabled. Completed work stays on
+its feature branch until a separate explicit publication request. Merge/push
+requests never authorize archiving a chat.
 
-Require both command intent and a clear repository/branch context. Do not trigger
-on quoted text, examples, code, filenames, acronym explanations, negated requests,
-or unrelated uses such as “What does MPA mean?” A request to define or configure
-these shortcuts does not execute them. If a command interpretation is plausible
-but the intended action or repository is ambiguous, clarify before mutations.
+Exact standalone lowercase `mp`, ignoring surrounding whitespace, explicitly
+requests finish-and-publish for the current task. It authorizes final review,
+outstanding checks, committing reviewed task changes, preparation, merge, push,
+and completed-branch cleanup. The user does not issue separate commit/prepare
+commands. Mentions, quotes, longer messages, and retired `mpa` do not trigger it.
+Configuring the hook is not a request to publish the configuration changes.
 
-Both aliases preserve verification, execution permissions, publication, and branch
-cleanup requirements. `mpa` directly authorizes archiving the current chat after
-successful publication and cleanup, once its work is complete. It needs no
-exclusive branch ownership or cross-chat history investigation; never archive
-other participants' chats. Failed publication, incomplete cleanup, or unfinished
-work keeps the current chat open. An explicit keep-open instruction takes precedence.
-`mp` retains conditional automatic archival and its ownership checks; “mp, keep
-this chat open” overrides that default. Use post-merge-cleanup for completion.
+The `UserPromptSubmit` hook obtains the checkout from `cwd`, current branch from
+Git HEAD, and chat UUID from `session_id`. Ready committed work publishes through
+the protected helper. Dirty work, missing/stale readiness, or missing participation
+instead creates a scoped pending request and adds preparation instructions to the
+same user turn. It does not publish until preparation completes.
+
+## Preparation within mp
+
+On the hook's scoped request, review the current task's full branch changes,
+preserve unrelated work, reuse qualifying check results, and run outstanding
+required gates. Fix authorized failures and commit only reviewed task files.
+Register the managing chat if needed, without fabricating creation history. Stop
+for unresolved scope, failed gates, denied execution access, or other concrete
+blockers; do not stop merely to ask for another commit/prepare command.
+
+Finish by invoking the existing `scripts/mp-command-hook.py --complete` from the
+Codex customization installation, with `--cwd`, `--session`, and the `--request`
+identifier supplied by the hook. Pass actual successful check commands through
+repeatable `--check` arguments. That handoff records the verified commit and runs
+protected publish/finish. It requires the same repository/branch/chat and unchanged
+request history; it expires after 30 minutes or a later user message. It runs no
+checks itself, so never fabricate results. It does not archive.
+
+The existing `--prepare` mode may still pre-record already-reviewed clean commits,
+but is internal and optional; it is not another user step. Changed contents need
+affected checks and refreshed readiness. The helper pins publication to the exact
+verified SHA. Publication failure consumes readiness; inspect actual state before
+recovery. Do not blindly retry or run a second assistant publication workflow.
+An unavailable or untrusted hook does not authorize an ad hoc raw-mp fallback.
+
+Separate explicit natural-language merge/push requests retain the protected
+workflow below. All paths leave chats open.
 
 ## Remote feature branches
 
@@ -73,20 +96,19 @@ codex-git publish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID
 codex-git finish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID
 ```
 
-Replace `codex-git` above with its full protected path. `REPOSITORY` may be an absolute checkout path in any current or future project under the user home, with a verified RyanUdelhoven GitHub HTTPS origin; the three legacy aliases also work. Use this path-based workflow across projects, including when older skill text lists only the legacy aliases. For already published branches, use `cleanup REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` instead of raw branch deletion, then follow the usual archive decision and `finish`. Registry keys, identity
+Replace `codex-git` above with its full protected path. `REPOSITORY` may be an absolute checkout path in any current or future project under the user home, with a verified RyanUdelhoven GitHub HTTPS origin; the three legacy aliases also work. Use this path-based workflow across projects, including when older skill text lists only the legacy aliases. For already published branches, use `cleanup REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` instead of raw branch deletion, then keep the chat open and run `finish`. Registry keys, identity
 requirements, destination checks, and limitations are in [publish helper](publish-helper.md).
 `inspect` returns local scope, worktrees, and participation without refreshing the
 remote or changing tracking. It requires a clean checkout and validated config.
 `register` records participation without claiming branch creation. Creation records
-still follow the feature-branch protocol; failed recording disables automatic archival.
+still follow the feature-branch protocol; report tracking gaps without inventing history.
 
 Review the complete scope before publication. Use the inspection's tracking record
 instead of direct Python inspection. `publish` registers the integrating chat,
 validates the live destination, integrates, verifies publication, and cleans branches.
-For explicit `mpa`, verify the current chat identity and use the app archival tool
-after successful completion; inspect other chat history only for conditional
-automatic archival, not to establish ownership for `mpa`. Run `finish` after the
-archive decision and any attempt.
+Keep the chat open after publication and cleanup. Run `finish` to close the branch
+participation lifecycle; it does not close the chat. Archival requires a separate
+explicit request targeting the chat.
 Do not repeat helper mutations manually. Failures require inspecting current state.
 
 ## Routine completion path
@@ -100,7 +122,7 @@ Keep the required outgoing-history secret scan at publication.
 Use one protected `inspect` result for preflight scope and participation, then
 `publish` once. Its receipt establishes publication and cleanup; do not repeat
 registration, remote verification, or branch deletion already confirmed there.
-Decide archival, attempt it when authorized, then `finish` once. Load recovery
+Keep the chat open and run `finish` once. Load recovery
 procedures only when the normal path reports a failure or incompatibility.
 
 ## Verification and approval boundaries

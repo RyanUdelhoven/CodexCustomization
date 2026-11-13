@@ -20,7 +20,7 @@ The user's account can still update it intentionally.
 Repository arguments accept an absolute checkout path anywhere under `/Users/ryanudelhoven`, including future projects. The existing `customization`, `mynormal`, and `marketnuance` aliases remain supported. Paths resolve canonically; the checkout must be the repository root. The literal local origin must be a single `https://github.com/RyanUdelhoven/NAME.git` URL. Other owners, SSH URLs, missing origins, rewrites, includes, and alternate push destinations require ordinary review. No project registration or source update is needed for new matching projects.
 
 After reviewing the complete branch scope, running repository gates, and confirming
-explicit or applicable standing user merge/push authorization, run exactly:
+explicit user merge/push authorization, run exactly:
 
 ```sh
 /Users/ryanudelhoven/.local/share/codex-publish/codex-git publish customization codex/example VERIFIED_CHAT_UUID
@@ -49,11 +49,8 @@ missing tooling, detected secrets, or scan errors stop publication. See
 publication does not run repository scripts or tests.
 
 Output includes publication evidence, cleanup status, and the participation record.
-The app workflow makes the archive decision. Explicit `mpa` verifies and archives
-only the current completed chat without an ownership/history investigation;
-conditional automatic archival retains those checks. Reuse the receipt for
-publication and cleanup instead of repeating its operations. After the decision
-and any archive attempt, close the same lifecycle:
+Keep the chat open after publication. Reuse the receipt for publication and cleanup
+instead of repeating operations. Close the branch participation lifecycle with:
 
 ```sh
 /Users/ryanudelhoven/.local/share/codex-publish/codex-git finish customization codex/example VERIFIED_CHAT_UUID
@@ -62,7 +59,7 @@ and any archive attempt, close the same lifecycle:
 A failed operation can leave main advanced or already published. Inspect the state
 before retrying; no automatic rollback, reset, or force push occurs. Failed cleanup
 preserves tracking history and requires ordinary repair. The helper never archives
-chats. Archival uses the app tool after successful publication and cleanup.
+chats. Archival requires a separate explicit chat request and uses the app tool; publication never triggers it.
 
 `git-workflow.rules` owns reviewed Git grants and raw push/branch prompts.
 Historical grants for those same command contexts were removed from the local
@@ -77,3 +74,24 @@ the protected directory; never whitelist the installer, Python, or a general she
 Run `python3 -m unittest discover -s scripts -p 'test_*.py'` for regression checks.
 
 For already integrated and published branches, use `cleanup ABSOLUTE_REPOSITORY_PATH codex/FEATURE VERIFIED_CHAT_UUID`. This requires a clean checkout on main, feature ancestry in main, local main matching live origin main, the remote default main, and no feature checkout in another worktree. It removes the verified feature branches and writes the same receipt for `finish`, without merging or pushing main. Changed remote feature tips remain preserved.
+
+## Commit-bound mp hook
+
+The UserPromptSubmit dispatcher passes `publish REPOSITORY BRANCH CHAT_UUID
+--expected-source FULL_COMMIT_SHA`. The optional expected-source argument accepts
+only a full lowercase SHA for publish. The protected helper refuses a different
+feature tip before any publication mutation, and integrates the captured commit
+SHA rather than rereading the mutable branch name. Older direct callers can omit
+this argument. Source changes require reviewed installation before the hook can
+use this new argument; never substitute the writable source for the protected copy.
+
+The dispatcher discovers the repository and current feature branch from Git in
+its supplied working directory. Ready work verifies participation and commit-bound
+readiness, then uses publish and finish. If ordinary preparation remains, the hook
+creates a repository/branch/chat-scoped request for the same assistant turn. The
+assistant reviews, checks, and commits only task files, then invokes --complete
+with that request ID. Completion records readiness and publishes without another
+user command. The request expires after 30 minutes or a later user message; main,
+detached HEAD, wrong chat/branch, and rewritten request history are refused.
+The Python dispatcher never stages or commits by itself; the authorized assistant
+preparation pass owns those judgment-dependent operations. No path archives chats.

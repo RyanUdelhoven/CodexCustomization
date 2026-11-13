@@ -19,3 +19,7 @@ Restart the desktop app if the new hook has not loaded in an existing session.
 
 OoT clips come from https://noproblo.dayjo.org/zeldasounds/oot/:
 `OOT_Get_Rupee.wav` and `OOT_Pot_Shatter.wav`.
+
+The earlier `mp` sound-only experiment used `metal-gear-solid-alert.mp3` at 75%
+volume. The current mp handler performs protected publication instead; it does
+not play that clip. The local audio remains available for other explicit uses.

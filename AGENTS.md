@@ -37,10 +37,23 @@ For merge/push requests, follow [the execution rules](rules/merge-push.md) befor
 running preflight commands. Use protected helpers and separate direct reads;
 do not introduce prompted raw commands into an otherwise approved workflow.
 
-Recognize `mp` as “merge push” and `mpa` as “merge push archive” only
-when the user issues a workflow command in an established repository/branch
-context. Follow [shortcut interpretation](rules/merge-push.md#contextual-shortcuts).
-Mentions, quotations, examples, and unrelated acronym discussions are not commands.
+Do not automatically merge, push, or archive after completing work, including
+skill changes. Require a separate explicit user request for those actions.
+Archival is always a separate user-controlled action; publication never closes chats.
+
+An exact standalone lowercase `mp` (ignoring surrounding whitespace) explicitly
+authorizes finishing and publishing the current task: final review, outstanding
+checks, staging/committing only reviewed task files, preparation, merge, push,
+and completed-branch cleanup. The hook gets the branch from Git in the supplied
+working directory and checks this chat's participation and verified commit.
+
+Ready work publishes directly. Work needing preparation reaches the assistant
+with a scoped request from the hook; complete that work and invoke the hook's
+`--complete` handoff within the same turn. Do not ask for a separate commit or
+preparation command. Preserve unrelated work and stop for genuine blockers or
+ambiguous scope. An unavailable hook or failed publication does not authorize
+blind manual fallback. Publication never archives chats. `mpa` remains retired.
+Follow [shortcut interpretation](rules/merge-push.md#contextual-shortcuts).
 
 ## New app runtime and local use
 

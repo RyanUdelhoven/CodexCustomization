@@ -1,9 +1,51 @@
 {
-  "description": "Record permission requests, play Navi on approval, and randomized OoT sounds on turn completion.",
+  "description": "Explicit mp publication, permission/usage capture, Navi approval, and OoT completion sounds.",
   "hooks": {
-    "Stop": [{"hooks": [{"type": "command", "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/scripts/turn-end-sound.py\"", "timeout": 5}]}],
-    "PreModelRequest": [{"hooks": [{"type": "command", "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/skills/approval-review/scripts/skill_usage.py\" capture", "timeout": 5}]}],
-    "PostModelRequest": [{"hooks": [{"type": "command", "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/skills/approval-review/scripts/skill_usage.py\" capture", "timeout": 5}]}],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/scripts/mp-command-hook.py\"",
+            "timeout": 600,
+            "statusMessage": "Finishing and publishing the feature branch"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/scripts/turn-end-sound.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreModelRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/skills/approval-review/scripts/skill_usage.py\" capture",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostModelRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/skills/approval-review/scripts/skill_usage.py\" capture",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "PermissionRequest": [
       {
         "hooks": [

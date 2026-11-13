@@ -66,6 +66,40 @@ class PublicationTests(unittest.TestCase):
         self.assertFalse(receipt['tracking']['single_chat_candidate'])
         self.assertTrue(self.publisher.finish('codex/example', CHAT)['closed'])
 
+    def test_one_mp_from_dirty_iteration_through_preparation_to_publication(self):
+        hook = runpy.run_path(str(ROOT / 'scripts/mp-command-hook.py'))
+        # Ordinary task branches stay local until main is published.
+        git('push', 'origin', ':codex/example', cwd=self.repo)
+        self.publisher.register('codex/example', CHAT)
+        (self.repo / 'file').write_text('final iteration')
+        calls = []
+        def protected(action, repo, branch, session, expected_source=None):
+            self.assertEqual(Path(repo), self.repo.resolve())
+            calls.append(action)
+            if action == 'publish':
+                return self.publisher.publish(branch, session, expected_source=expected_source)
+            return getattr(self.publisher, action)(branch, session)
+        with patch.dict(hook['handle'].__globals__, publisher=protected):
+            response = hook['handle']({'hook_event_name': 'UserPromptSubmit', 'prompt': 'mp',
+                                       'cwd': str(self.repo), 'session_id': CHAT})
+            self.assertIn('hookSpecificOutput', response)
+            self.assertEqual(calls, [])
+            common = self.repo / '.git'
+            request_file = hook['request_path'](common, CHAT)
+            request = json.loads(request_file.read_text())
+            # Simulate the agent's authorized preparation, using real Git/checks.
+            git('diff', '--check', cwd=self.repo)
+            git('commit', '-am', 'final task iteration', cwd=self.repo)
+            expected = git('rev-parse', 'HEAD', cwd=self.repo)
+            result = hook['complete'](str(self.repo), CHAT, request['request_id'], ['git diff --check'])
+        self.assertTrue(result['completed'])
+        self.assertEqual(calls, ['inspect', 'inspect', 'publish', 'finish'])
+        self.assertEqual(git('rev-parse', 'main', cwd=self.remote), expected)
+        self.assertEqual(git('branch', '--show-current', cwd=self.repo), 'main')
+        self.assertEqual(git('branch', '--list', 'codex/example', cwd=self.repo), '')
+        self.assertFalse(request_file.exists())
+        self.assertTrue(self.publisher.tracking('inspect', 'codex/example', CHAT)['record']['closed'])
+
     def test_creation_without_host_stays_single_chat_after_publish(self):
         subprocess.run(['/usr/bin/python3', str(self.root / 'branch_chats.py'),
             'register', '--repo', str(self.repo), '--branch', 'codex/example',
@@ -113,6 +147,19 @@ class PublicationTests(unittest.TestCase):
             self.publisher.publish('codex/example', CHAT)
         self.assertEqual(git('rev-parse', 'main', cwd=self.remote), before)
         self.assertTrue((self.repo / 'untracked').exists())
+
+    def test_expected_source_mismatch_stops_before_mutation(self):
+        before = git('show-ref', cwd=self.repo)
+        remote_before = git('show-ref', cwd=self.remote)
+        with self.assertRaisesRegex(ValueError, 'verified commit'):
+            self.publisher.publish('codex/example', CHAT, expected_source='0' * 40)
+        self.assertEqual(git('show-ref', cwd=self.repo), before)
+        self.assertEqual(git('show-ref', cwd=self.remote), remote_before)
+
+    def test_expected_source_publishes_the_verified_commit(self):
+        tip = git('rev-parse', 'HEAD', cwd=self.repo)
+        receipt = self.publisher.publish('codex/example', CHAT, expected_source=tip)
+        self.assertEqual(receipt['published'], tip)
 
     def test_cleanup_already_published_branch(self):
         git('switch', 'main', cwd=self.repo)

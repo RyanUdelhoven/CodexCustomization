@@ -9,6 +9,12 @@ Determine scope from the actual diff, including relevant untracked files. Find t
 
 Distinguish failures caused by the change, known baseline failures, environmental blockers, and checks not run. Report partial runs as partial; when applicability of an earlier result is uncertain, rerun the affected check. Fix in-scope failures when authorized, and report commands and outcomes compactly. A prose-only change does not need the code stack unless project rules require it.
 
+## Handoff to the mp hook
+
+For an mp preparation request, complete final task review and outstanding required checks, reusing eligible results. That explicit command also authorizes committing only reviewed task files; preserve unrelated changes and use the repository's normal commit hooks. Register the chat if needed, then invoke the supplied `mp-command-hook.py --complete` handoff with actual successful check commands. It records readiness and publishes in the same turn, so no separate user commit or prepare command is needed. Stop on genuine failures or ambiguous scope.
+
+Outside an explicit publication request, do not automatically commit or publish. Optional `--prepare` can record already-reviewed clean commits, but it does not run checks or establish user publication intent. Follow [merge/push execution](../../rules/merge-push.md#preparation-within-mp). Never invent verification evidence.
+
 ## Verify the app the user opens
 
 Before reporting browser-facing work complete, identify the user's actual app URL and trace it to the serving process: for example, a native server, Docker Compose service, or managed proxy upstream. Use session context, project configuration, and observed runtime state; an isolated test server or preview URL does not establish what the user's browser receives. If discovery cannot resolve the intended URL or process, ask for the missing information and report availability as unverified.
