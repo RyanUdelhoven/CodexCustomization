@@ -49,8 +49,11 @@ missing tooling, detected secrets, or scan errors stop publication. See
 publication does not run repository scripts or tests.
 
 Output includes publication evidence, cleanup status, and the participation record.
-The app workflow checks chat history and makes the archive decision. After that
-decision and any archive attempt, close the same lifecycle:
+The app workflow makes the archive decision. Explicit `mpa` verifies and archives
+only the current completed chat without an ownership/history investigation;
+conditional automatic archival retains those checks. Reuse the receipt for
+publication and cleanup instead of repeating its operations. After the decision
+and any archive attempt, close the same lifecycle:
 
 ```sh
 /Users/ryanudelhoven/.local/share/codex-publish/codex-git finish customization codex/example VERIFIED_CHAT_UUID

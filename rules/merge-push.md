@@ -19,11 +19,14 @@ or unrelated uses such as “What does MPA mean?” A request to define or confi
 these shortcuts does not execute them. If a command interpretation is plausible
 but the intended action or repository is ambiguous, clarify before mutations.
 
-These aliases preserve the full commands' verification, permissions, publication,
-branch cleanup, and archival safeguards. `mpa` explicitly requests archival after
-successful merge/push and cleanup; use post-merge-cleanup to determine eligibility
-and report any blocker. `mp` preserves the existing conditional auto-archive
-behavior of “merge push”; “mp, keep this chat open” overrides that default.
+Both aliases preserve verification, execution permissions, publication, and branch
+cleanup requirements. `mpa` directly authorizes archiving the current chat after
+successful publication and cleanup, once its work is complete. It needs no
+exclusive branch ownership or cross-chat history investigation; never archive
+other participants' chats. Failed publication, incomplete cleanup, or unfinished
+work keeps the current chat open. An explicit keep-open instruction takes precedence.
+`mp` retains conditional automatic archival and its ownership checks; “mp, keep
+this chat open” overrides that default. Use post-merge-cleanup for completion.
 
 ## Remote feature branches
 
@@ -80,8 +83,25 @@ still follow the feature-branch protocol; failed recording disables automatic ar
 Review the complete scope before publication. Use the inspection's tracking record
 instead of direct Python inspection. `publish` registers the integrating chat,
 validates the live destination, integrates, verifies publication, and cleans branches.
-Use native app tools for history and archival. Run `finish` after that decision.
+For explicit `mpa`, verify the current chat identity and use the app archival tool
+after successful completion; inspect other chat history only for conditional
+automatic archival, not to establish ownership for `mpa`. Run `finish` after the
+archive decision and any attempt.
 Do not repeat helper mutations manually. Failures require inspecting current state.
+
+## Routine completion path
+
+Reuse the branch, task scope, and verification evidence already established in
+this chat. Review only unreviewed changes and run outstanding required checks;
+new Git commit identities alone do not invalidate checks on unchanged contents.
+Recheck when relevant inputs, environment, scope, or repository policy require it.
+Keep the required outgoing-history secret scan at publication.
+
+Use one protected `inspect` result for preflight scope and participation, then
+`publish` once. Its receipt establishes publication and cleanup; do not repeat
+registration, remote verification, or branch deletion already confirmed there.
+Decide archival, attempt it when authorized, then `finish` once. Load recovery
+procedures only when the normal path reports a failure or incompatibility.
 
 ## Verification and approval boundaries
 

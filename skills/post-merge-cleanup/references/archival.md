@@ -1,6 +1,16 @@
 # Archive a completed chat
 
-The ownership and open-lifecycle checks below govern automatic archival and archival requested through `mpa`. A direct request to archive a specific chat (including the current chat) independently authorizes that chat operation, even after a lifecycle has closed. Verify the target, finish any explicitly required prerequisite work, and use the app archival tool; do not require branch tracking repairs or another confirmation. This direct request does not authorize archiving other participants' chats. Do not reinterpret `mpa` alone as an override of its safeguards.
+## Explicit archival
+
+`mpa` directly authorizes archiving the verified current chat after successful publication and branch cleanup, provided no unfinished work or pending request remains in that chat. Do not investigate exclusive branch ownership or other chat history for this explicit request. Missing creation records, multiple participants, or a closed tracking lifecycle do not by themselves block it. Never archive other participants' chats. Keep-open instructions override archival; failed publication or incomplete cleanup keeps the chat open.
+
+A standalone direct request to archive a specific chat independently authorizes that operation, even after a lifecycle has closed. Verify the target and finish any explicitly required prerequisites; do not require tracking repairs or another confirmation. This standalone operation does not require new Git publication.
+
+Use the app archival tool with the verified target identity and inspect its result. Report only confirmed success. Close any currently open publication lifecycle after the decision and archive attempt; do not reopen an old lifecycle. Missing tools or failed archival keeps the chat open and must be reported.
+
+## Conditional automatic archival
+
+The ownership and open-lifecycle checks below apply only when archival was not explicitly requested, such as the automatic preference after `mp` or standing skill publication.
 
 Inspect and retain the participation record before deleting branches.
 
