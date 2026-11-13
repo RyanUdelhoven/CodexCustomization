@@ -86,6 +86,56 @@ class RestrictedReaderTests(unittest.TestCase):
 
 
 class InstalledPolicyTests(unittest.TestCase):
+    def test_development_uses_sandbox_without_new_unsandboxed_grants(self):
+        rules = [item for path in sorted((ROOT / "rules").glob("*.rules"))
+                 for item in ("--rules", str(path))]
+        # None means defer to the session policy, never an outside-sandbox allowance.
+        commands = [
+            ["npm", "test", "--", "tests/new-check.spec.ts"],
+            ["npm", "run", "test", "--", "--workers=1"],
+            ["npm", "run", "test:browser", "--", "tests/new-check.spec.ts"],
+            ["node_modules/.bin/prettier", "--write", "src/new-file.ts"],
+            ["python", "-c", "print('sandboxed')"],
+            ["python3.12", "-m", "unittest", "discover"],
+            ["/usr/bin/python3", "-c", "print('sandboxed')"],
+            ["node", "--eval", "console.log('sandboxed')"],
+            ["node", "--input-type=module", "-"],
+            ["/bin/bash", "-lc", "python3 arbitrary.py"],
+            ["/bin/sh", "-c", "node arbitrary.js"],
+            ["/usr/bin/sed", "-i", "", "s/old/new/", "src/new-file.ts"],
+            ["/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path/rg",
+             "--pre=sh", "pattern", "."],
+        ]
+        for command in commands:
+            with self.subTest(command=command):
+                result = subprocess.check_output([CODEX, "execpolicy", "check", *rules,
+                                                  "--", *command], text=True)
+                self.assertIsNone(json.loads(result).get("decision"))
+
+    def test_docker_inspection_does_not_grant_execution_or_mutation(self):
+        rules = [item for path in sorted((ROOT / "rules").glob("*.rules"))
+                 for item in ("--rules", str(path))]
+        cases = [
+            (["docker", "image", "ls", "--filter", "dangling=true", "--format", "{{.ID}}"], "allow"),
+            (["docker", "image", "inspect", "new-app:local", "--format", "{{.Id}}"], "allow"),
+            (["docker", "container", "inspect", "new-app-web-1"], "allow"),
+            (["docker", "volume", "inspect", "new-app-data"], "allow"),
+            (["docker", "network", "ls", "--format", "{{.Name}}"], "allow"),
+            (["docker", "network", "inspect", "new-app_default"], "allow"),
+            (["docker", "exec", "new-app-web-1", "sh"], None),
+            (["docker", "image", "save", "new-app:local", "-o", "/tmp/new-app.tar"], None),
+            (["docker", "image", "rm", "new-app:local"], None),
+            (["docker", "volume", "rm", "new-app-data"], None),
+            (["docker", "network", "rm", "new-app_default"], None),
+            (["docker", "run", "--privileged", "new-app:local"], "prompt"),
+            (["docker", "--host", "tcp://other-host:2375", "image", "ls"], None),
+        ]
+        for command, expected in cases:
+            with self.subTest(command=command):
+                result = subprocess.check_output([CODEX, "execpolicy", "check", *rules,
+                                                  "--", *command], text=True)
+                self.assertEqual(json.loads(result).get("decision"), expected)
+
     def test_allowances_and_guardrails_against_combined_rules(self):
         # Evaluate every configured prefix against ALL installed rules, including old grants.
         rules = []
@@ -107,10 +157,10 @@ class InstalledPolicyTests(unittest.TestCase):
               "--branch", "codex/variable", "--chat-id", "variable-id", "--created"], "allow"),
             (["/Users/ryanudelhoven/.local/share/codex-publish/codex-branch-chats", "inspect", "--repo", "/tmp/repo", "--branch", "codex/other"], "allow"),
             (["/Users/ryanudelhoven/.local/share/codex-publish/secret_check.py", "range", "--repo", "/tmp/repo", "--base", "main", "--tip", "HEAD"], "allow"),
-            (["/usr/bin/python3", "-I", str(ROOT / "scripts/install-script-allowances.py"), "--yaml-source", "/tmp/yaml"], "prompt"),
-            (["/usr/bin/python3", "-I", str(ROOT / "scripts/secret_check.py"), "staged"], "prompt"),
-            (["bash", "-lc", "git for-each-ref refs/heads && python3 -c 'print(1)'"], "prompt"),
-            (["sh", "-c", "git ls-tree HEAD; git push --force origin main"], "prompt"),
+            (["/usr/bin/python3", "-I", str(ROOT / "scripts/install-script-allowances.py"), "--yaml-source", "/tmp/yaml"], None),
+            (["/usr/bin/python3", "-I", str(ROOT / "scripts/secret_check.py"), "staged"], None),
+            (["bash", "-lc", "git for-each-ref refs/heads && python3 -c 'print(1)'"], None),
+            (["sh", "-c", "git ls-tree HEAD; git push --force origin main"], None),
             (["git", "-C", str(ROOT), "for-each-ref", "--count=10"], "allow"),
             (["git", "-C", str(ROOT / "skills"), "ls-tree", "HEAD"], "allow"),
             (["codex", "execpolicy", "check", "--rules", str(ROOT / "rules/git-workflow.rules"),
@@ -128,7 +178,7 @@ class InstalledPolicyTests(unittest.TestCase):
             (["/Users/ryanudelhoven/.local/share/codex-publish/codex-git", "publish",
               "mynormal", "codex/example", "invalid-id", "--force"], "allow"),
             (["git", "remote", "remove", "origin"], "forbidden"),
-            (["node", "-e", "require('fs').writeFileSync('/tmp/never-run', '')"], "prompt"),
+            (["node", "-e", "require('fs').writeFileSync('/tmp/never-run', '')"], None),
             (["sed", "-n", "1p;w /tmp/never-run", "README.md"], None),
             (["rg", "--pre=sh", "pattern", "."], None),
             (["find", ".", "-delete"], "prompt"),

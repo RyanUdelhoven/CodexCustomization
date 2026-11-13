@@ -114,6 +114,53 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(git('rev-parse', 'main', cwd=self.remote), before)
         self.assertTrue((self.repo / 'untracked').exists())
 
+    def test_cleanup_already_published_branch(self):
+        git('switch', 'main', cwd=self.repo)
+        git('merge', '--ff-only', 'codex/example', cwd=self.repo)
+        git('push', 'origin', 'main', cwd=self.repo)
+        receipt = self.publisher.cleanup('codex/example', CHAT)
+        self.assertIn('local feature deleted', receipt['cleanup'])
+        self.assertTrue(self.publisher.finish('codex/example', CHAT)['closed'])
+
+    def test_cleanup_unpublished_branch_preserved(self):
+        git('switch', 'main', cwd=self.repo)
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.publisher.cleanup('codex/example', CHAT)
+        self.assertTrue(git('branch', '--list', 'codex/example', cwd=self.repo))
+
+    def test_cleanup_requires_exact_published_main(self):
+        git('switch', 'main', cwd=self.repo)
+        git('merge', '--ff-only', 'codex/example', cwd=self.repo)
+        with self.assertRaisesRegex(ValueError, 'match published main'):
+            self.publisher.cleanup('codex/example', CHAT)
+        self.assertTrue(git('branch', '--list', 'codex/example', cwd=self.repo))
+
+    def test_cleanup_preserves_worktrees_and_changed_remote_feature(self):
+        git('switch', 'main', cwd=self.repo)
+        git('merge', '--ff-only', 'codex/example', cwd=self.repo)
+        git('push', 'origin', 'main', cwd=self.repo)
+        git('worktree', 'add', self.root / 'other', 'codex/example', cwd=self.repo)
+        with self.assertRaisesRegex(ValueError, 'another worktree'):
+            self.publisher.cleanup('codex/example', CHAT)
+        git('worktree', 'remove', self.root / 'other', cwd=self.repo)
+        git('push', 'origin', 'main~1:codex/example', '--force', cwd=self.repo)
+        receipt = self.publisher.cleanup('codex/example', CHAT)
+        self.assertIn('remote feature retained', ' '.join(receipt['cleanup']))
+        self.assertTrue(git('branch', '--list', 'codex/example', cwd=self.remote))
+
+    def test_repository_resolution_accepts_future_projects_and_rejects_destinations(self):
+        resolver = MODULE['resolve_repository']
+        with patch.dict(resolver.__globals__, HOME=self.root):
+            git('remote', 'set-url', 'origin', 'https://github.com/RyanUdelhoven/FutureApp.git', cwd=self.repo)
+            self.assertEqual(resolver(str(self.repo)), (self.repo.resolve(), 'https://github.com/RyanUdelhoven/FutureApp.git'))
+            for url in ['https://github.com/OtherOwner/App.git', 'git@github.com:RyanUdelhoven/App.git',
+                        'https://github.com/RyanUdelhoven/App.git/../../Other/App.git']:
+                git('remote', 'set-url', 'origin', url, cwd=self.repo)
+                with self.assertRaises(ValueError):
+                    resolver(str(self.repo))
+            with self.assertRaises(ValueError):
+                resolver('/tmp/outside-home')
+
     def test_destination_rewrite_rejected_before_network(self):
         git('config', 'url.https://evil.example/.insteadOf', 'https://github.com/', cwd=self.repo)
         with self.assertRaisesRegex(ValueError, 'rewrites'):

@@ -17,13 +17,7 @@ behavior. This is sandbox protection, not root ownership: do not grant an agent
 write access to the installation directory or register it as a writable workspace.
 The user's account can still update it intentionally.
 
-The registry is embedded in the installed helper:
-
-| Key | Checkout | Expected GitHub repository |
-| --- | --- | --- |
-| customization | `/Users/ryanudelhoven/.codex` | RyanUdelhoven/CodexCustomization |
-| mynormal | `/Users/ryanudelhoven/development/projects/MyNormal` | RyanUdelhoven/MyNormal |
-| marketnuance | `/Users/ryanudelhoven/development/projects/MarketNuance` | RyanUdelhoven/MarketNuance |
+Repository arguments accept an absolute checkout path anywhere under `/Users/ryanudelhoven`, including future projects. The existing `customization`, `mynormal`, and `marketnuance` aliases remain supported. Paths resolve canonically; the checkout must be the repository root. The literal local origin must be a single `https://github.com/RyanUdelhoven/NAME.git` URL. Other owners, SSH URLs, missing origins, rewrites, includes, and alternate push destinations require ordinary review. No project registration or source update is needed for new matching projects.
 
 After reviewing the complete branch scope, running repository gates, and confirming
 explicit or applicable standing user merge/push authorization, run exactly:
@@ -78,3 +72,5 @@ Restart Codex after changing rule files. Until then, the running session may ret
 old rules. For installation, explicitly approve copying reviewed files into
 the protected directory; never whitelist the installer, Python, or a general shell.
 Run `python3 -m unittest discover -s scripts -p 'test_*.py'` for regression checks.
+
+For already integrated and published branches, use `cleanup ABSOLUTE_REPOSITORY_PATH codex/FEATURE VERIFIED_CHAT_UUID`. This requires a clean checkout on main, feature ancestry in main, local main matching live origin main, the remote default main, and no feature checkout in another worktree. It removes the verified feature branches and writes the same receipt for `finish`, without merging or pushing main. Changed remote feature tips remain preserved.

@@ -70,7 +70,7 @@ codex-git publish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID
 codex-git finish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID
 ```
 
-Replace `codex-git` above with its full protected path. Registry keys, identity
+Replace `codex-git` above with its full protected path. `REPOSITORY` may be an absolute checkout path in any current or future project under the user home, with a verified RyanUdelhoven GitHub HTTPS origin; the three legacy aliases also work. Use this path-based workflow across projects, including when older skill text lists only the legacy aliases. For already published branches, use `cleanup REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` instead of raw branch deletion, then follow the usual archive decision and `finish`. Registry keys, identity
 requirements, destination checks, and limitations are in [publish helper](publish-helper.md).
 `inspect` returns local scope, worktrees, and participation without refreshing the
 remote or changing tracking. It requires a clean checkout and validated config.
@@ -93,7 +93,7 @@ The protected publisher never runs repository verification code.
 
 A routine already-verified registered publication should use only allowed direct
 operations. Dirty files, divergence, unsafe configuration, stale verification, or
-unregistered repositories may stop the workflow. Do not bypass those checks or
+unverified repositories may stop the workflow. Do not bypass those checks or
 disable approvals globally to make the workflow appear successful.
 
 The protected installation and future changes to it require reviewed installation

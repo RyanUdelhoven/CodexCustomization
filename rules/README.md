@@ -9,8 +9,9 @@ Add reviewed, narrowly scoped `.rules` files here. No existing local approval gr
 `terminal-read.rules` contains the terminal allowances reviewed on November 9, 2026.
 It is installed in this checkout. Restart Codex to load changed rules.
 The absolute helper and interpreter paths target Ryan's Mac; review those paths
-before installing elsewhere. Rules apply to outside-sandbox requests, not every
-command executed inside the sandbox. Existing Git rules remain separate.
+before installing elsewhere. Allow rules permit matching outside-sandbox requests;
+explicit prompt rules can also require review inside the sandbox. Existing Git
+rules remain separate.
 
 Basic readers and selected diagnostic prefixes run without approval. Previously
 saved command allowances remain effective. For mixed-capability tools such as
@@ -56,7 +57,7 @@ codex execpolicy check --pretty \
   --rules /Users/ryanudelhoven/.codex/rules/default.rules \
   --rules /Users/ryanudelhoven/.codex/rules/git-workflow.rules \
   --rules /Users/ryanudelhoven/.codex/rules/terminal-read.rules \
-  -- node -e 'console.log("review required")'
+  -- node -e 'console.log("sandbox policy applies")'
 ```
 
 ## Reusable inspection allowances (November 10, 2026)
@@ -164,6 +165,41 @@ and obtain the user's direction. Prefer protected reviewed copies where availabl
 Restart Codex to load changes. The private review directory contains the pre-change
 terminal policy backup, restore plan and per-pattern comparison; no global sandbox
 setting or filesystem access mode was changed by this policy restoration.
+
+## Sandboxed development and Docker inspection (November 12, 2026)
+
+Ordinary file edits, interpreter calls, tests, formatting, and searches should first
+run inside the project sandbox. Removed 28 explicit prompt overrides for these
+development commands. This removes forced per-command review inside the sandbox;
+it does not grant general outside-sandbox Python, Node, shell, or test execution.
+An unmatched policy-check decision uses the session's normal approval policy.
+Existing saved command exceptions retain their scope. Network restrictions,
+protected paths, writable roots, and managed policy remain in force.
+
+Use the normal file-editing tool for project changes and temporary scripts inside
+the sandbox. Reuse the protected reader, validator, participation tracker, secret
+checker, and recorders above when their bounded operations cover the task. No new
+general file-writing helper or permission to edit unrelated directories is needed.
+If an operation needs broader access, review the actual path or network need;
+do not preemptively request unrestricted execution.
+
+Added reusable read-only Docker prefixes: `image ls`, `image inspect`,
+`container inspect`, `volume inspect`, `network ls`, and `network inspect`.
+Object names, filters, and Go-template formatting may vary. These commands have
+no output-file, container-execution, or mutation options. Global Docker flags
+before these prefixes are not covered. Existing `docker inspect` and `context show`
+saved allowances already cover those inspection forms.
+
+Keep approval boundaries for deletion, service mutation, raw Git publication,
+protected-helper installation, and new outside-sandbox code execution. Existing
+legacy exceptions remain as previously authorized; this update does not add
+registry-wide network access, writable roots, or arbitrary executable grants.
+
+Restart Codex to load changed rules. Combined policy tests verify rule decisions,
+not whether the desktop has reloaded them or stopped displaying prompts.
+
+Sources: [OpenAI command rules](https://learn.chatgpt.com/docs/agent-configuration/rules)
+and [approval triggers](https://learn.chatgpt.com/docs/sandboxing/auto-review).
 
 ## Merge and push workflow
 

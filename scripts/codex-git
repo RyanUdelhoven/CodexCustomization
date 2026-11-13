@@ -1,5 +1,5 @@
 #!/usr/bin/python3 -I
-"""Bounded publication for registered local repositories. No arbitrary Git arguments."""
+"""Bounded publication for verified local repositories. No arbitrary Git arguments."""
 import argparse
 import hashlib
 import json
@@ -19,6 +19,25 @@ INSTALL = HOME / '.local/share/codex-publish'
 ENV = {'PATH': '/usr/bin:/bin', 'HOME': str(HOME), 'GIT_TERMINAL_PROMPT': '0',
        'GIT_CONFIG_NOSYSTEM': '1', 'GIT_CONFIG_GLOBAL': '/dev/null',
        'GIT_CONFIG_COUNT': '0', 'GIT_NO_REPLACE_OBJECTS': '1'}
+
+
+def resolve_repository(value):
+    if value in REPOS:
+        repo, name = REPOS[value]
+        return repo, 'https://github.com/RyanUdelhoven/' + name + '.git'
+    path = Path(value)
+    if not path.is_absolute():
+        raise ValueError('Supply a known alias or absolute repository path')
+    path = path.resolve()
+    if not path.is_relative_to(HOME.resolve()):
+        raise ValueError('Repository must be inside the user home directory')
+    # Read literal local configuration with hooks/transports disabled. Validation
+    # below rejects includes and rewrites before any network or mutation.
+    origin = Publisher(path, '').git('config', '--local', '--no-includes',
+                                    '--get-all', 'remote.origin.url')
+    if not re.fullmatch(r'https://github\.com/RyanUdelhoven/[A-Za-z0-9_][A-Za-z0-9_.-]*\.git', origin):
+        raise ValueError('Origin must be one literal RyanUdelhoven GitHub HTTPS repository')
+    return path, origin
 
 
 def run(args, cwd, check=True):
@@ -135,6 +154,28 @@ class Publisher:
         published = self.git('rev-parse', 'refs/heads/main')
         if self.remote_tip('refs/heads/main') != published:
             raise ValueError('Remote moved or verification failed; preserve branches and inspect manually')
+        return self.remove_completed(branch, chat, source, published, tracking)
+
+    def cleanup(self, branch, chat):
+        """Clean an already published branch without merging or pushing main."""
+        self.validate()
+        if self.git('symbolic-ref', '--short', 'HEAD') != 'main':
+            raise ValueError('Cleanup requires the checkout on main')
+        source = self.git('rev-parse', '--verify', 'refs/heads/' + branch)
+        published = self.git('rev-parse', 'refs/heads/main')
+        self.git('merge-base', '--is-ancestor', source, published)
+        default = self.git('ls-remote', '--symref', self.url, 'HEAD')
+        if 'ref: refs/heads/main\tHEAD' not in default.splitlines():
+            raise ValueError('Remote default branch must be main')
+        if self.remote_tip('refs/heads/main') != published:
+            raise ValueError('Local main must match published main before cleanup')
+        for block in self.git('worktree', 'list', '--porcelain').split('\n\n'):
+            if 'branch refs/heads/' + branch in block.splitlines():
+                raise ValueError('Feature branch is checked out in another worktree')
+        tracking = self.tracking('register', branch, chat)
+        return self.remove_completed(branch, chat, source, published, tracking)
+
+    def remove_completed(self, branch, chat, source, published, tracking):
         receipt = {'branch': branch, 'source': source, 'published': published, 'chat': chat,
                    'tracking': tracking, 'cleanup': []}
         remote_feature = self.remote_tip('refs/heads/' + branch)
@@ -166,8 +207,8 @@ class Publisher:
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['inspect', 'register', 'publish', 'finish'])
-    parser.add_argument('repository', choices=sorted(REPOS))
+    parser.add_argument('action', choices=['inspect', 'register', 'publish', 'cleanup', 'finish'])
+    parser.add_argument('repository', help='Known alias or absolute local repository path')
     parser.add_argument('branch')
     parser.add_argument('chat_id')
     args = parser.parse_args(argv)
@@ -175,8 +216,11 @@ def main(argv=None):
         parser.error('Only codex/ feature branches with lowercase letters and digits are accepted')
     if not re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', args.chat_id):
         parser.error('Supply the verified Codex chat UUID')
-    repo, name = REPOS[args.repository]
-    publisher = Publisher(repo, 'https://github.com/RyanUdelhoven/' + name + '.git')
+    try:
+        repo, url = resolve_repository(args.repository)
+    except (ValueError, OSError) as error:
+        parser.error(str(error))
+    publisher = Publisher(repo, url)
     result = getattr(publisher, args.action)(args.branch, args.chat_id)
     print(json.dumps(result, indent=2))
 

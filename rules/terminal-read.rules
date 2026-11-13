@@ -1,5 +1,5 @@
 # Reviewed terminal allowances and approval boundaries, 2026-11-09.
-# Rules govern outside-sandbox requests; they do not replace the sandbox.
+# Allow rules cover outside-sandbox requests; prompt rules can also gate sandboxed commands.
 # Use the protected installed codex-read for restricted read operations.
 # Preserve previously saved allowances; unlisted operations use normal approval policy.
 
@@ -47,37 +47,22 @@ prefix_rule(pattern=["chmod"], decision="prompt", justification="Review executio
 prefix_rule(pattern=["docker", "run"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
 prefix_rule(pattern=["launchctl"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
 prefix_rule(pattern=["unzip"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["npm", "test"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["npm", "run", "test"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["npm", "run", "test:browser"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["node_modules/.bin/prettier"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["node", "-e"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["node", "--eval"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["node", "-p"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["node", "--print"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["node", "-"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["node", "--input-type=module"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["python"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["python3.9"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["python3.11"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["python3.12"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["python3.13"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["python3.14"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["ruby"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["bash"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["zsh"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["sh"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["/bin/bash"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["/bin/sh"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["/usr/local/bin/python3.9"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["/usr/bin/python3"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["/usr/local/bin/python3"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["/usr/bin/ruby"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["/usr/bin/sed"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
 prefix_rule(pattern=["/usr/bin/find"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
 prefix_rule(pattern=["/usr/bin/curl"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
 prefix_rule(pattern=["/bin/date"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
-prefix_rule(pattern=["/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path/rg"], decision="prompt", justification="Review execution or side effects; use codex-read for supported read-only operations.")
+
+# Ordinary editing, tests, formatting, searches, and interpreter calls use the sandbox.
+# No general allow rule: unmatched escalation still uses the normal approval policy.
+# Existing saved exceptions remain effective. Use protected helpers for broader access.
+
+# Read-only Docker inspection with variable object names, filters, and formatting.
+# No global Docker flags, execution, lifecycle, deletion, or output-file commands.
+prefix_rule(pattern=["docker", "image", "ls"], decision="allow")
+prefix_rule(pattern=["docker", "image", "inspect"], decision="allow")
+prefix_rule(pattern=["docker", "container", "inspect"], decision="allow")
+prefix_rule(pattern=["docker", "volume", "inspect"], decision="allow")
+prefix_rule(pattern=["docker", "network", "ls"], decision="allow")
+prefix_rule(pattern=["docker", "network", "inspect"], decision="allow")
 
 # Reviewed native macOS inspection commands, November 11, 2026.
 # Fixed system paths; no output-file, mutation, shell, or execution options.
