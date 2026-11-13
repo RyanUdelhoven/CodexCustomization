@@ -77,6 +77,30 @@ omit Coulson registration. If Coulson cannot support the app's platform, explain
 that limitation when asking and resolve the local-use approach with the user.
 Local personal use through Coulson does not request public hosting or deployment.
 
+## Browser automation on macOS
+
+Prefer the supported built-in browser for inspecting websites and local apps.
+Use the supported Chrome connection when a task needs the user's Chrome session.
+Follow specialized hosting and browser-tool requirements. Preserve repository-defined
+test runners and required checks; interactive browser inspection does not replace them.
+
+Do not launch installed Chrome, Chrome for Testing, or Chromium directly from a
+restricted shell on macOS, including through Node, Playwright, Puppeteer, headless
+flags, or fallback scripts. A headless launch still needs macOS system services.
+When a repository-defined browser test needs a local browser process, use the
+approved execution mechanism outside the restricted sandbox, subject to existing
+permissions. Request approval only when required; never disable the sandbox globally,
+add broad command allowances, or use Chrome's `--no-sandbox` flag as a workaround.
+If an allowed launch path is unavailable, report the check as blocked or unverified.
+
+Treat an immediate `SIGABRT` / `Abort trap: 6` with `_RegisterApplication` or
+`TransformProcessType` frames as a browser startup failure, not an application-test
+failure. Stop retries through that launch path. Capture minimal diagnostic evidence,
+then use an allowed supported browser or approved external execution path. Do not
+repeat the failing launch, reinstall browsers, switch profiles, or substitute another
+Chromium binary merely to retry the same restricted path. Verify any replacement
+path with one minimal launch before running the required journey or test suite.
+
 ## Design preferences
 
 Avoid interfaces that require horizontal scrolling, including page overflow,
