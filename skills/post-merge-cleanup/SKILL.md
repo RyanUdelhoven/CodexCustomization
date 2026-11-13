@@ -5,6 +5,8 @@ description: Finish an authorized merge with branch cleanup and eligible chat ar
 
 # Post-merge cleanup
 
+For a direct request to archive a specific chat, use [archival guidance](references/archival.md) directly; no merge, push, or branch-tracking repair is required.
+
 Recognize `mp` (“merge push”) and `mpa` (“merge push archive”) only as direct workflow instructions in clear repository/branch context. Follow [contextual shortcuts](../../rules/merge-push.md#contextual-shortcuts) for interpretation; quotations, examples, definitions, and unrelated acronym mentions do not authorize execution. Both aliases retain this skill's existing safeguards, including conditional archival eligibility; `mpa` makes the archival request explicit without bypassing those checks.
 
 A merge request automatically authorizes and requires deleting the completed feature branch both locally and on its source remote, if present. Complete cleanup within the merge workflow after verifying successful integration and target publication; do not wait for a separate cleanup request or conversational confirmation. Keep execution permission requirements and explicit requests to retain a branch. If cleanup cannot safely complete, report the retained branch and concrete blocker rather than treating the merge workflow as fully complete.
@@ -30,20 +32,6 @@ Run `publish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` as one direct command.
 
 The receipt preserves participation evidence. This skill still owns app-history checks, the archive decision, and the app archival call. A retained remote branch or any incomplete cleanup keeps the chat open. After the decision and any archive attempt, run `finish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` to close the recorded lifecycle. Never close it before the archive decision. The helper does not archive chats or authorize publication. For unregistered repositories or incompatible workflows, follow the ordinary steps above and normal execution approvals.
 
-## Archive the completed chat
+## Archive decision and completion
 
-The ownership and open-lifecycle checks below govern automatic archival and archival requested through `mpa`. A direct request to archive a specific chat (including the current chat) independently authorizes that chat operation, even after a lifecycle has closed. Verify the target, finish any explicitly required prerequisite work, and use the app archival tool; do not require branch tracking repairs or another confirmation. This direct request does not authorize archiving other participants' chats. Do not reinterpret `mpa` alone as an override of its safeguards.
-
-Inspect and retain the participation record before deleting branches.
-
-After a verified merge into the repository's primary/default branch and a successful push of that target to `origin`, archive the originating chat only if one verified chat managed the branch from creation through integration. Determine the primary branch from repository guidance or verified remote metadata; do not assume `main`. Merging into another target or pushing only another remote does not trigger archival. A failed push never triggers archival. Explicit instructions to retain the chat override this preference.
-
-Use the participation protocol above. Require a complete, open lifecycle, one distinct participant matching the recorded origin, and no evidence of other managing chats or missing history. The current integrating chat must match that origin. Verify that the chat's task is complete and no other active branch, unfinished work, or pending request in that chat would be hidden by archival. When merging multiple branches, assess all of them before any archival; if any participating branch has multiple managing chats, archive nothing for that merge workflow.
-
-Use the local tracker's normalized identities: an omitted Codex host and `local` represent the same local host for the same chat ID. Distinct explicit hosts remain distinct. Duplicate alias records alone do not prove multiple managing chats. A previously closed lifecycle remains ineligible for automatic archival; explain that a direct request to archive this chat can proceed independently, rather than implying Git work remains.
-
-When multiple chats managed a branch, archive none of those chats. After the successful push, report: “Multiple chats managed this branch; no chats were archived.” Name or link verified participants when useful. If evidence is incomplete instead, report that ownership could not be verified and no chats were archived; do not claim multiple chats without evidence. Missing tools or tracking never block authorized merge/push or branch cleanup.
-
-Complete branch cleanup and report the merge, push, cleanup outcome, and archive decision before archiving. A material cleanup blocker or unfinished follow-up keeps the chat open. Use the available `set_thread_archived` tool with `archived: true` and the verified originating chat identity; omit the thread ID only when targeting the verified current chat. Preserve its source and any verified Codex host. Inspect the tool result and report archival success only when confirmed. If it fails or is unavailable, keep the chat open and report the limitation. Do not substitute permanent deletion, worktree archival, bulk archival, or a scheduled automation.
-
-Close the participation lifecycle after the decision and any archive attempt, following the protocol. Report the confirmed outcome in the final response. This skill does not authorize bulk stale-branch deletion, unrelated chat archival, or unrelated repository changes.
+After publication and cleanup, apply [archival eligibility](references/archival.md) when archival is requested or the default automatic-archive preference applies. Explicit instructions to keep the chat open skip that history investigation; record the decision and finish the lifecycle. Use the publisher receipt rather than repeating Git or participation mutations. Report merge, publication, cleanup, and the archive decision once.

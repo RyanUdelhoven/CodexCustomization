@@ -7,6 +7,8 @@ description: Containerize an existing web application with Docker and Compose fo
 
 Produce working local container packaging for the application's actual stack. Support any suitable web stack; do not assume React or Node. Preserve existing Docker conventions and user-selected development or built-app behavior. Default bookmark-driven personal use to a built app when appropriate; preserve hot reload when requested or already central to the workflow.
 
+Ordinary application corrections preserve working packaging. Rebuild the existing service when needed to deliver the change; do not repeat packaging discovery, port allocation, or persistence tests unless their inputs change.
+
 ## Inspect and implement
 
 Identify entrypoints, lockfiles, runtime versions, build output, frontend/backend boundaries, required services, environment variables, migrations, writable paths, and existing container files. Desktop-only applications require a web interface before this workflow applies. Avoid rewriting app architecture to force containerization.
@@ -15,7 +17,7 @@ Check Docker CLI, Compose, daemon availability, and host architecture. On Apple 
 
 Create or minimally amend Dockerfile, .dockerignore, Compose configuration, and concise run instructions. Prefer a Coulson-recognizable compose.yml when creating new packaging for that workflow; preserve an existing filename unless compatibility requires a scoped change.
 
-For Coulson integration, Docker Compose is the required startup method under coulson-ready unless the user explicitly overrides it. Missing packaging belongs to this skill; missing tooling or incompatibility must be resolved or reported rather than bypassed with native startup. Preserve independent local development commands and app-specific packaging conventions.
+For requested Coulson integration, hand the existing Compose packaging and port assignments to coulson-ready; that skill owns provider selection and bookmark startup.
 
 Use compatible maintained base images, lockfile-based installs, cache-friendly dependency layers, and multi-stage builds when they reduce runtime contents. Run as a non-root user where the stack permits, use signal-correct startup commands, and provide writable-path ownership. Never copy host node_modules or virtual environments into the image. Exclude credentials, local environment files, VCS data, and irrelevant artifacts without excluding required build inputs. Pass build credentials through supported secret mounts, not image layers.
 

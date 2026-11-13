@@ -31,7 +31,7 @@ Use empty lists when no sponsors/promotions exist. All lists require actual cont
 .runtime/venv/bin/python scripts/workflow.py read 'RUN' clean --offset 0 --limit 60
 ```
 
-Inspect all retained speech and promotion boundaries. Reapplying `clean` rebuilds from raw and invalidates sections and notes, allowing automatic corrections without damaging the original. Never edit `raw.json` or generated `clean.json` directly.
+Account for all retained speech using the raw-page pass; inspect promotion boundaries and any uncertain retained passages. Reapplying `clean` rebuilds from raw and invalidates sections and notes, allowing automatic corrections without damaging the original. Never edit `raw.json` or generated `clean.json` directly.
 
 ## Section outline
 
@@ -51,7 +51,7 @@ Use only retained IDs. Their concatenation must match the cleaned transcript exa
 .runtime/venv/bin/python scripts/workflow.py read 'RUN' clean --section s1 --offset 0 --limit 60
 ```
 
-Read all pages of each section. Section-specific offsets count within that section. Reapplying an outline invalidates imported section notes.
+Reuse speech already read during the raw-page pass. Read section pages only to fill coverage gaps or resolve uncertainty. Section-specific offsets count within that section. Reapplying an outline invalidates imported section notes.
 
 ## Section notes and final checks
 

@@ -9,7 +9,7 @@ Treat the user's goal as the target and their proposed method as a starting poin
 
 ## Compare options and verify costs
 
-Prioritize free options that meet the requirements. Research the available options across relevant approach categories, including free alternatives to paid products. Complete the comparison before pausing for the cost discussion; do not stop at the first paid result. Cover the viable options comprehensively within the task's scope, disclose research limits, and never claim literal market completeness without evidence.
+Prioritize free options that meet the requirements. Research the available options across relevant approach categories, including free alternatives to paid products. Complete the comparison before pausing for the cost discussion; do not stop at the first paid result. Compare materially different viable approaches. Stop when verified capabilities, costs, and tradeoffs support the choice; expand only for a consequential unresolved gap. Disclose limits without claiming market completeness.
 
 Verify current pricing and licensing against official sources. Include a pricing source and access date for each candidate. Explain whether the proposed use is free, conditionally free, trial-only, paid, or unverified. Check subscriptions, usage charges, minimum commitments, required paid dependencies, hosting, commercial licenses, free-tier limits, overages, and automatic billing where relevant. Distinguish optional paid tiers from charges required by the proposed use. Do not call a free trial permanently free or equate open source with zero operating cost. State assumptions for estimates; never invent prices or promise zero cost when pricing remains unclear.
 

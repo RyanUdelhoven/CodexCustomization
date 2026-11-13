@@ -15,6 +15,8 @@ description: Define and distribute CSS color tokens and light and dark themes wh
 
 ## Themes
 
+Apply this section when creating a theme system or changing theme behavior. For a scoped palette correction, update existing themes and relevant contrast checks; do not add another theme, selector, or storage mechanism.
+
 - Support both light and dark. For new theme implementations, use dark on first load unless the user specifies a different default. Apply the dark defaults on `:root` and override the same tokens with a light theme selector such as `:root[data-theme="light"]`. Set the corresponding `color-scheme` so native controls match.
 - Provide an accessible way to choose either theme. Reuse existing theme controls and preference storage. In a new implementation, persist the explicit choice and restore it on load. An existing saved choice takes precedence over the default.
 - Keep components on the same semantic tokens in both themes. Check text, interactive states, and focus indicators against their actual backgrounds in each theme.

@@ -48,7 +48,7 @@ If nothing meets all preferences, identify the closest feasible approaches and t
 
 ## Deliver the comparison
 
-Lead with the recommended approach and its main compromise. Usually present up to three distinct options; use fewer when evidence supports fewer. Include a compact comparison covering cost, additions or services, setup, recurring manual work, reliability, maintenance, privacy, evidence, simplicity, reversibility, and transparency. Group criteria when that improves readability.
+Lead with the recommended approach and its main compromise. Usually present up to three distinct options; use fewer when evidence supports fewer. Apply the ordered preferences internally. Report the decisive differences and material compromises; omit criteria that do not affect the choice. A settled approach needs a brief rationale, not a full comparison table.
 
 Link evidence near each option and explain what transfers to this user's task. State why the ranking follows the ordered priorities, identify the first meaningful differentiator, and explain what would change the recommendation. Include a practical next step and any decisive unknown. Report research dates or relevant versions for changing capabilities. Do not claim a solution was tested unless it was executed and verified.
 

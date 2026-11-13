@@ -31,6 +31,6 @@ Preserve the user's chosen scope. Do not generalize a one-time workaround into a
 
 ## Output
 
-Return one ready-to-paste prompt in one fenced `text` block, with no essential instructions outside it. Use a fence longer than any contained backtick sequence if quoting code. Avoid empty template headings, unnecessary placeholders, and a second competing version. A brief introduction is optional; do not claim the destination skill has been built or installed.
+Use a fence longer than any contained backtick sequence. Omit empty headings, unnecessary placeholders, and competing versions. Do not claim the destination skill exists.
 
 This skill owns the transfer prompt. Skill-creator owns actual skill construction; handoff-writer owns resumable project-work handoffs. When the user explicitly requests packaging for later creation, finish with the prompt rather than invoking those creation workflows locally. A request simply to “create a skill” does not imply packaging.
