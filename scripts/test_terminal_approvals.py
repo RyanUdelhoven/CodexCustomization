@@ -189,7 +189,7 @@ class InstalledPolicyTests(unittest.TestCase):
             (["/usr/sbin/sysctl", "-n", "hw.optional.arm64", "kern.maxfiles=99999"], "prompt"),
             ([str(ROOT / "scripts/codex-read"), "now"], "allow"),
             (["/Users/ryanudelhoven/.local/share/codex-publish/codex-read", "now"], "allow"),
-            (["git", "branch", "--show-current"], "prompt"),
+            (["git", "branch", "--show-current"], "allow"),
             (["git", "rev-parse", "--abbrev-ref", "HEAD"], "allow"),
         ])
         for command, expected in cases:
@@ -197,6 +197,24 @@ class InstalledPolicyTests(unittest.TestCase):
                 result = subprocess.run([CODEX, "execpolicy", "check", *rules, "--", *command],
                                         check=True, capture_output=True, text=True)
                 self.assertEqual(json.loads(result.stdout).get("decision"), expected)
+
+    def test_branch_operations_allow_deletion_except_main(self):
+        rules = [item for path in sorted((ROOT / "rules").glob("*.rules"))
+                 for item in ("--rules", str(path))]
+        prefixes = [["git"]] + [["git", "-C", path] for path in [
+            str(ROOT), str(ROOT / "skills"), "/tmp/codex-task-research-merge"]]
+        cases = [(["--show-current"], "allow"),
+                 (["codex/new-branch"], "allow")]
+        for flag in ["-d", "-D", "--delete"]:
+            cases += [([flag, "codex/completed"], "allow"),
+                      ([flag, "main"], "forbidden")]
+        for prefix in prefixes:
+            for arguments, expected in cases:
+                command = prefix + ["branch"] + arguments
+                with self.subTest(command=command):
+                    result = subprocess.check_output(
+                        [CODEX, "execpolicy", "check", *rules, "--", *command], text=True)
+                    self.assertEqual(json.loads(result)["decision"], expected)
 
     def test_saved_exceptions_survive_without_blanket_code_allowances(self):
         rules = [item for path in sorted((ROOT / 'rules').glob('*.rules'))
