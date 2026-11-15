@@ -31,14 +31,32 @@ Codex chats and main as the verified remote default branch. It rejects extra
 arguments, arbitrary repositories, primary-branch deletion, dirty checkouts,
 in-progress operations, participating branches in other worktrees, unexpected
 origin destinations, URL rewrites/config includes, and repository credential or filter commands. It fetches main directly
-from the fixed HTTPS destination, requires local main to be contained in remote
-main and remote main to be contained in the feature tip, and fast-forwards main.
-Divergence stops before switching branches; update the feature branch normally
-and rerun the relevant checks. Non-fast-forward merge workflows retain normal
-approval requirements.
+from the fixed HTTPS destination and requires local main to be contained in remote
+main and remote main to be contained in the verified feature tip. Divergence stops
+before publication; update the feature branch and rerun affected checks.
 
-Pushes use explicit main-to-main refspecs, with no force. Remote verification
-must observe the published commit before cleanup. Remote feature deletion uses
+The PR-capable publisher uses fixed `/usr/local/bin/gh` API calls to github.com,
+requires the RyanUdelhoven account, and verifies the feature tip's author email. It
+scans outgoing history before any feature push, creates only a missing remote
+feature ref using an exact absence lease, and rejects differing remote tips. It
+verifies the pushed tip's GitHub attribution, opens or reuses a same-repository PR,
+and requires clean mergeability, successful checks, and satisfied reviews. It
+merges with `merge_method=merge` pinned to the verified source SHA. It never pushes
+main directly, bypasses protections, squashes, or enables auto-merge. It polls pending checks/mergeability for up to 30 seconds. Pending checks
+or reviews then stop with the PR URL and retain branches; inspect live state before
+recovery. A missing email-read scope can block attribution verification; use a
+verified account-specific noreply email or resolve access without rewriting history.
+
+After GitHub confirms the merge, it fetches main, proves both the source and merge
+commit remain in published history, and fast-forwards local main to that published
+tip. Its receipt records `source`, `published`, `merge_commit`, `pull_request`, and
+`source_preserved`. Inspection advertises `publication_workflow=github-pr-merge-v1`;
+the mp hook rejects older installed helpers before publication. The mp hook must accept a published merge SHA different from
+the feature SHA. Both publisher and hook source changes require coordinated
+activation; an old direct-main publisher must not be used for this workflow.
+
+Remote verification must observe the published commit before cleanup.
+Remote feature deletion uses
 an exact-tip lease to preserve concurrent commits; different feature tips remain
 untouched and disable archival. Local cleanup uses `branch -d`. Git hooks and
 fsmonitor are disabled, global/system Git configuration is excluded, inherited

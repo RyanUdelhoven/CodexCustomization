@@ -68,7 +68,7 @@ class HandoffTests(unittest.TestCase):
         git(self.repo, 'commit', '-m', 'base')
         git(self.repo, 'switch', '-c', 'codex/example')
         self.head = git(self.repo, 'rev-parse', 'HEAD')
-        self.inspection = {'branch': 'codex/example', 'head': self.head, 'feature': self.head,
+        self.inspection = {'publication_workflow': 'github-pr-merge-v1', 'branch': 'codex/example', 'head': self.head, 'feature': self.head,
                            'tracking': {'record': {'id': 'lifecycle-1', 'closed': False,
                            'participants': [{'source': 'codex', 'hostId': 'local', 'threadId': CHAT}]}}}
         self.calls = []
@@ -81,7 +81,8 @@ class HandoffTests(unittest.TestCase):
         if action == 'inspect':
             return self.inspection
         if action == 'publish':
-            return {'branch': branch, 'source': self.head, 'published': self.head,
+            return {'branch': branch, 'source': self.head, 'published': 'a' * 40, 'source_preserved': True, 'merge_commit': 'a' * 40,
+                    'pull_request': 'https://github.com/RyanUdelhoven/Test/pull/1',
                     'cleanup': ['local feature deleted']}
         return {'closed': True}
 
@@ -102,6 +103,12 @@ class HandoffTests(unittest.TestCase):
         self.assertEqual([c[0] for c in self.calls], ['inspect', 'inspect', 'publish', 'finish'])
         self.assertEqual(self.calls[2], ('publish', str(self.repo), 'codex/example', CHAT, self.head))
         self.assertFalse(Path(ready['record']).exists())
+
+    def test_legacy_publisher_is_rejected_before_publication(self):
+        self.inspection.pop('publication_workflow')
+        with self.assertRaisesRegex(ValueError, 'lacks the PR workflow'):
+            hook.publish(str(self.repo), CHAT)
+        self.assertNotIn('publish', [c[0] for c in self.calls])
 
     def test_main_detached_and_unregistered_chat_are_refused(self):
         for target in ('main', self.head):
