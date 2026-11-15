@@ -12,7 +12,7 @@ its feature branch until a separate explicit publication request. Merge/push
 requests never authorize archiving a chat.
 
 Exact standalone lowercase `mp`, ignoring surrounding whitespace, explicitly
-requests finish-and-publish for the current task. It authorizes final review,
+requests PR-based finish-and-publish for the current task. It authorizes final review,
 outstanding checks, committing reviewed task changes, preparation, merge, push,
 and completed-branch cleanup. The user does not issue separate commit/prepare
 commands. Mentions, quotes, longer messages, and retired `mpa` do not trigger it.
@@ -53,10 +53,21 @@ workflow below. All paths leave chats open.
 
 ## Remote feature branches
 
-Keep implementation branches local unless the user requests a remote branch or
-the authorized task needs one for review, backup, or collaboration. A required
-push does not by itself require creating a remote feature branch; follow the
-authorized destination and lifecycle. Existing remote branches remain valid.
+Keep implementation branches local until explicit publication authorization,
+unless earlier review, backup, or collaboration needs a remote branch. Default
+`mp` publication pushes the exact verified feature tip, opens or reuses a GitHub
+pull request under Ryan's account, and merges into main using a merge commit.
+Preserve meaningful individual commits and accurate authorship. Verify account
+and author-email attribution. Never manufacture commits or backdate work.
+Respect narrower explicit push destinations and branch-retention requests.
+
+Wait for checks and approvals; preserve the PR and branches on pending or failed
+checks, missing reviews, incompatible merge policies, or changed source tips.
+Never bypass protections, silently squash, or fall back to pushing main directly.
+Verify the PR merge and feature ancestry in published main before synchronizing
+local main and deleting completed branches. Branch deletion preserves merged
+history and contribution eligibility. Private-profile visibility changes require
+a separate user request. GitHub determines contribution eligibility and counts.
 
 A request to merge a feature branch also authorizes and requires automatic
 removal of that completed feature branch locally and on its source remote, if
@@ -105,7 +116,7 @@ still follow the feature-branch protocol; report tracking gaps without inventing
 
 Review the complete scope before publication. Use the inspection's tracking record
 instead of direct Python inspection. `publish` registers the integrating chat,
-validates the live destination, integrates, verifies publication, and cleans branches.
+validates the live destination, publishes through a PR merge commit, verifies source ancestry in published main, and cleans branches.
 Keep the chat open after publication and cleanup. Run `finish` to close the branch
 participation lifecycle; it does not close the chat. Archival requires a separate
 explicit request targeting the chat.

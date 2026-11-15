@@ -22,10 +22,68 @@ def git(*args, cwd=None, check=True):
 
 
 class LocalPublisher(Publisher):
+    PR_CHECK_ATTEMPTS = 1
+
+    @property
+    def remote(self):
+        return self.repo.parent / 'remote.git'
+
     def git(self, *args, check=True):
         # Test-only transport; production has no CLI override for its HTTPS registry.
+        args = tuple(str(self.repo.parent / 'remote.git') if arg == 'https://github.com/RyanUdelhoven/Test.git' else arg for arg in args)
         return git('-c', 'core.hooksPath=/dev/null', '-C', self.repo, *args, check=check)
 
+
+    def contribution_identity(self, source):
+        return {'login': 'RyanUdelhoven', 'id': 123}
+
+    def api(self, endpoint, method='GET', **fields):
+        self.api_calls = getattr(self, 'api_calls', []) + [(endpoint, method, fields)]
+        if endpoint.endswith('/merge'):
+            if getattr(self, 'merge_denied', False):
+                raise ValueError('simulated merge protection failure')
+            assert fields == {'sha': git('rev-parse', 'codex/example', cwd=self.remote), 'merge_method': 'merge'}
+            server = self.repo.parent / 'server'
+            git('clone', self.remote, server)
+            git('config', 'user.name', 'GitHub', cwd=server)
+            git('config', 'user.email', 'noreply@github.com', cwd=server)
+            git('merge', '--no-ff', fields['sha'], '-m', 'Merge pull request #1', cwd=server)
+            git('push', 'origin', 'main', cwd=server)
+            return {'merged': True, 'sha': git('rev-parse', 'HEAD', cwd=server)}
+        if '/pulls' not in endpoint and '/commits/' not in endpoint:
+            return {'default_branch': 'main', 'allow_merge_commit': getattr(self, 'allow_merge_commit', True)}
+        pr = {'number': 1, 'html_url': 'https://github.com/RyanUdelhoven/Test/pull/1',
+              'head': {'sha': git('rev-parse', 'codex/example', cwd=self.remote),
+                       'repo': {'full_name': 'RyanUdelhoven/Test'}},
+              'base': {'ref': 'main', 'repo': {'full_name': 'RyanUdelhoven/Test'}},
+              'user': {'login': 'RyanUdelhoven'}, 'draft': False}
+        if '/commits/' in endpoint:
+            return {'author': {'login': getattr(self, 'mapped_author', 'RyanUdelhoven')}}
+        if endpoint.endswith('/pulls'):
+            if method == 'POST':
+                self.pr_exists = True
+                return pr
+            return [pr] if getattr(self, 'pr_exists', False) else []
+        if '/pulls/' in endpoint:
+            if getattr(self, 'pr_changed', False):
+                pr['head']['sha'] = '0' * 40
+            return pr
+        return {'default_branch': 'main', 'allow_merge_commit': getattr(self, 'allow_merge_commit', True)}
+
+    def gh(self, *args):
+        return json.dumps(getattr(self, 'pr_state', {'mergeStateStatus': 'CLEAN',
+            'reviewDecision': '', 'statusCheckRollup': []}))
+
+    def publish_pr(self, branch, source, user):
+        # Preserve the real production implementation; only API transport is fake.
+        original = self.url
+        self.url = 'https://github.com/RyanUdelhoven/Test.git'
+        try:
+            with patch.object(self, 'remote_tip', side_effect=lambda ref:
+                              git('rev-parse', '--verify', ref, cwd=self.remote, check=False) or None):
+                return super().publish_pr(branch, source, user)
+        finally:
+            self.url = original
 
 class PublicationTests(unittest.TestCase):
     def setUp(self):
@@ -58,8 +116,11 @@ class PublicationTests(unittest.TestCase):
     def test_publish_verify_cleanup_and_finish(self):
         tip = git('rev-parse', 'HEAD', cwd=self.repo)
         receipt = self.publisher.publish('codex/example', CHAT)
-        self.assertEqual(receipt['published'], tip)
-        self.assertEqual(git('rev-parse', 'main', cwd=self.remote), tip)
+        self.assertNotEqual(receipt['published'], tip)
+        self.assertEqual(receipt['source'], tip)
+        self.assertTrue(receipt['source_preserved'])
+        self.assertEqual(git('rev-parse', 'main', cwd=self.remote), receipt['published'])
+        git('merge-base', '--is-ancestor', tip, 'main', cwd=self.remote)
         self.assertEqual(git('branch', '--show-current', cwd=self.repo), 'main')
         self.assertEqual(git('branch', '--list', 'codex/example', cwd=self.repo), '')
         self.assertEqual(git('branch', '--list', 'codex/example', cwd=self.remote), '')
@@ -68,7 +129,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_one_mp_from_dirty_iteration_through_preparation_to_publication(self):
         hook = runpy.run_path(str(ROOT / 'scripts/mp-command-hook.py'))
-        # Ordinary task branches stay local until main is published.
+        # Ordinary task branches stay local until explicitly requested PR publication.
         git('push', 'origin', ':codex/example', cwd=self.repo)
         self.publisher.register('codex/example', CHAT)
         (self.repo / 'file').write_text('final iteration')
@@ -94,7 +155,7 @@ class PublicationTests(unittest.TestCase):
             result = hook['complete'](str(self.repo), CHAT, request['request_id'], ['git diff --check'])
         self.assertTrue(result['completed'])
         self.assertEqual(calls, ['inspect', 'inspect', 'publish', 'finish'])
-        self.assertEqual(git('rev-parse', 'main', cwd=self.remote), expected)
+        git('merge-base', '--is-ancestor', expected, 'main', cwd=self.remote)
         self.assertEqual(git('branch', '--show-current', cwd=self.repo), 'main')
         self.assertEqual(git('branch', '--list', 'codex/example', cwd=self.repo), '')
         self.assertFalse(request_file.exists())
@@ -127,6 +188,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_push_failure_preserves_feature_and_tracking(self):
         before = git('rev-parse', 'main', cwd=self.remote)
+        git('push', 'origin', ':codex/example', cwd=self.repo)
         original = self.publisher.git
         def fail_push(*args, **kwargs):
             if args[0] == 'push':
@@ -159,7 +221,9 @@ class PublicationTests(unittest.TestCase):
     def test_expected_source_publishes_the_verified_commit(self):
         tip = git('rev-parse', 'HEAD', cwd=self.repo)
         receipt = self.publisher.publish('codex/example', CHAT, expected_source=tip)
-        self.assertEqual(receipt['published'], tip)
+        self.assertNotEqual(receipt['published'], tip)
+        self.assertEqual(receipt['source'], tip)
+        self.assertTrue(receipt['source_preserved'])
 
     def test_cleanup_already_published_branch(self):
         git('switch', 'main', cwd=self.repo)
@@ -239,9 +303,63 @@ class PublicationTests(unittest.TestCase):
 
     def test_remote_feature_with_different_tip_retained(self):
         git('push', 'origin', 'main:codex/example', '--force', cwd=self.repo)
-        receipt = self.publisher.publish('codex/example', CHAT)
-        self.assertIn('remote feature retained', ' '.join(receipt['cleanup']))
+        with self.assertRaisesRegex(ValueError, 'Remote feature tip differs'):
+            self.publisher.publish('codex/example', CHAT)
         self.assertTrue(git('branch', '--list', 'codex/example', cwd=self.remote))
+        self.assertTrue(git('branch', '--list', 'codex/example', cwd=self.repo))
+
+    def test_pending_checks_reviews_and_failures_preserve_branches(self):
+        for state in [
+            {'mergeStateStatus': 'BLOCKED', 'reviewDecision': 'REVIEW_REQUIRED'},
+            {'mergeStateStatus': 'UNKNOWN'},
+            {'mergeStateStatus': 'CLEAN', 'statusCheckRollup': [{'status': 'IN_PROGRESS'}]},
+            {'mergeStateStatus': 'CLEAN', 'statusCheckRollup': [{'conclusion': 'FAILURE'}]},
+        ]:
+            self.publisher.pr_state = state
+            before = git('rev-parse', 'main', cwd=self.remote)
+            with self.assertRaisesRegex(ValueError, 'pending/blocked'):
+                self.publisher.publish('codex/example', CHAT)
+            self.assertEqual(git('rev-parse', 'main', cwd=self.remote), before)
+            self.assertTrue(git('branch', '--list', 'codex/example', cwd=self.repo))
+            self.assertTrue(git('branch', '--list', 'codex/example', cwd=self.remote))
+        creations = [c for c in self.publisher.api_calls if c[1] == 'POST']
+        self.assertEqual(len(creations), 1)
+
+    def test_waits_for_pending_checks_then_merges(self):
+        self.publisher.PR_CHECK_ATTEMPTS = 2
+        states = [json.dumps({'mergeStateStatus': 'BLOCKED', 'statusCheckRollup': [{'status': 'IN_PROGRESS'}]}),
+                  json.dumps({'mergeStateStatus': 'CLEAN', 'statusCheckRollup': [{'conclusion': 'SUCCESS'}]})]
+        with patch.object(self.publisher, 'gh', side_effect=states), patch('time.sleep') as sleep:
+            receipt = self.publisher.publish('codex/example', CHAT)
+        sleep.assert_called_once_with(5)
+        self.assertTrue(receipt['source_preserved'])
+
+    def test_mismatched_pr_and_disallowed_merge_preserve_branches(self):
+        for attribute, message in [('pr_changed', 'PR identity'),
+                                   ('allow_merge_commit', 'must allow merge'),
+                                   ('merge_denied', 'protection failure')]:
+            setattr(self.publisher, attribute, attribute != 'allow_merge_commit')
+            with self.assertRaisesRegex(ValueError, message):
+                self.publisher.publish('codex/example', CHAT)
+            self.assertTrue(git('branch', '--list', 'codex/example', cwd=self.repo))
+            setattr(self.publisher, attribute, attribute == 'allow_merge_commit')
+
+    def test_unattributed_tip_stops_before_pr_creation(self):
+        self.publisher.mapped_author = 'someone-else'
+        with self.assertRaisesRegex(ValueError, 'not attributed'):
+            self.publisher.publish('codex/example', CHAT)
+        self.assertFalse(any(c[1] == 'POST' for c in self.publisher.api_calls))
+
+    def test_pr_merge_preserves_all_individual_commits(self):
+        (self.repo / 'second').write_text('another meaningful change')
+        git('add', '.', cwd=self.repo)
+        git('commit', '-m', 'second change', cwd=self.repo)
+        git('push', 'origin', 'codex/example', cwd=self.repo)
+        outgoing = git('rev-list', 'main..HEAD', cwd=self.repo).splitlines()
+        receipt = self.publisher.publish('codex/example', CHAT)
+        for commit in outgoing:
+            git('merge-base', '--is-ancestor', commit, receipt['published'], cwd=self.repo)
+        self.assertEqual(len(git('rev-list', '--parents', '-1', receipt['merge_commit'], cwd=self.repo).split()), 3)
 
     def test_secret_deleted_in_later_commit_blocks_before_integration(self):
         before = git('rev-parse', 'main', cwd=self.remote)
@@ -263,6 +381,33 @@ class PublicationTests(unittest.TestCase):
             with self.subTest(args=args), contextlib.redirect_stderr(io.StringIO()):
                 with self.assertRaises(SystemExit):
                     MODULE['main'](args)
+
+
+class IdentityTests(unittest.TestCase):
+    def setUp(self):
+        self.publisher = Publisher('/tmp', 'https://github.com/RyanUdelhoven/Test.git')
+
+    def test_account_specific_noreply_needs_no_email_scope(self):
+        with patch.object(self.publisher, 'git', return_value='123+RyanUdelhoven@users.noreply.github.com'), \
+             patch.object(self.publisher, 'api', return_value={'login': 'RyanUdelhoven', 'id': 123}) as api:
+            self.publisher.contribution_identity('a' * 40)
+        api.assert_called_once_with('user')
+
+    def test_verified_email_and_wrong_account(self):
+        with patch.object(self.publisher, 'git', return_value='test@example.com'), \
+             patch.object(self.publisher, 'api', side_effect=[{'login': 'RyanUdelhoven', 'id': 123},
+                                                            [{'email': 'test@example.com', 'verified': True}]]):
+            self.publisher.contribution_identity('a' * 40)
+        with patch.object(self.publisher, 'api', return_value={'login': 'Other', 'id': 1}):
+            with self.assertRaisesRegex(ValueError, 'RyanUdelhoven GitHub account'):
+                self.publisher.contribution_identity('a' * 40)
+
+    def test_unverified_email_is_rejected(self):
+        with patch.object(self.publisher, 'git', return_value='test@example.com'), \
+             patch.object(self.publisher, 'api', side_effect=[{'login': 'RyanUdelhoven', 'id': 123},
+                                                            [{'email': 'test@example.com', 'verified': False}]]):
+            with self.assertRaisesRegex(ValueError, 'not verified'):
+                self.publisher.contribution_identity('a' * 40)
 
 
 if __name__ == '__main__':
