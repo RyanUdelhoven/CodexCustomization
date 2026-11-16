@@ -13,7 +13,7 @@ Distinguish failures caused by the change, known baseline failures, environmenta
 
 For an mp preparation request, complete final task review and outstanding required checks, reusing eligible results. That explicit command also authorizes committing only reviewed task files; preserve unrelated changes and use the repository's normal commit hooks. Register the chat if needed, then invoke the supplied `mp-command-hook.py --complete` handoff with actual successful check commands. It records readiness and publishes in the same turn, so no separate user commit or prepare command is needed. Stop on genuine failures or ambiguous scope.
 
-Outside an explicit publication request, do not automatically commit or publish. Optional `--prepare` can record already-reviewed clean commits, but it does not run checks or establish user publication intent. Follow [merge/push execution](../../rules/merge-push.md#preparation-within-mp). Never invent verification evidence.
+Outside an explicit publication request, do not automatically commit or publish. A new-repository request under [repository-bootstrap](../repository-bootstrap/SKILL.md) authorizes its initial local commit; affirmative GitHub setup consent separately authorizes its first baseline push. Optional `--prepare` can record already-reviewed clean commits, but it does not run checks or establish user publication intent. Follow [merge/push execution](../../rules/merge-push.md#preparation-within-mp). Never invent verification evidence.
 
 ## Verify the app the user opens
 
