@@ -108,6 +108,7 @@ class PublicationTests(unittest.TestCase):
         shutil.copy(ROOT / 'skills/feature-branch/scripts/branch_chats.py', self.root)
         for name in ['secret_check.py', 'secret-policy.toml']:
             shutil.copy(ROOT / 'scripts' / name, self.root)
+        shutil.copy(ROOT / 'scripts/mp-command-hook.py', self.root)
         self.old_install = Publisher.tracking.__globals__['INSTALL']
         Publisher.tracking.__globals__['INSTALL'] = self.root
         self.addCleanup(lambda: Publisher.tracking.__globals__.__setitem__('INSTALL', self.old_install))
@@ -152,7 +153,9 @@ class PublicationTests(unittest.TestCase):
             git('diff', '--check', cwd=self.repo)
             git('commit', '-am', 'final task iteration', cwd=self.repo)
             expected = git('rev-parse', 'HEAD', cwd=self.repo)
-            result = hook['complete'](str(self.repo), CHAT, request['request_id'], ['git diff --check'])
+            with patch('runpy.run_path', return_value=hook) as load:
+                result = self.publisher.complete('codex/example', CHAT, request['request_id'], ['git diff --check'])
+            load.assert_called_once_with(str(self.root / 'mp-command-hook.py'))
         self.assertTrue(result['completed'])
         self.assertEqual(calls, ['inspect', 'inspect', 'publish', 'finish'])
         git('merge-base', '--is-ancestor', expected, 'main', cwd=self.remote)
@@ -160,6 +163,56 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(git('branch', '--list', 'codex/example', cwd=self.repo), '')
         self.assertFalse(request_file.exists())
         self.assertTrue(self.publisher.tracking('inspect', 'codex/example', CHAT)['record']['closed'])
+
+    def test_complete_refuses_missing_or_symlinked_protected_dependency(self):
+        module = self.root / 'mp-command-hook.py'
+        module.unlink()
+        for symlink in (False, True):
+            if symlink:
+                module.symlink_to(ROOT / 'scripts/mp-command-hook.py')
+            with self.subTest(symlink=symlink), patch('runpy.run_path') as load:
+                with self.assertRaisesRegex(ValueError, 'protected mp handoff dependency'):
+                    self.publisher.complete('codex/example', CHAT, CHAT, ['checks'])
+                load.assert_not_called()
+
+    def test_complete_loads_installed_copy_and_refuses_absent_or_expired_request(self):
+        with self.assertRaisesRegex(ValueError, 'No pending mp request'):
+            self.publisher.complete('codex/example', CHAT, CHAT, ['checks'])
+        path = self.repo / '.git/codex-publish' / ('mp-request-' + CHAT + '.json')
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps({'request_id': CHAT, 'repository': str(self.repo.resolve()),
+            'branch': 'codex/example', 'session_id': CHAT, 'requested_at': '2000-01-01T00:00:00+00:00'}))
+        with self.assertRaisesRegex(ValueError, 'expired'):
+            self.publisher.complete('codex/example', CHAT, CHAT, ['checks are data, not executed'])
+        self.assertFalse(path.exists())
+        self.assertEqual(git('rev-parse', 'main', cwd=self.repo), git('rev-parse', 'main', cwd=self.remote))
+
+    def test_complete_requires_matching_checkout_and_validated_repository(self):
+        git('checkout', 'main', cwd=self.repo)
+        with patch('runpy.run_path') as load:
+            with self.assertRaisesRegex(ValueError, 'requested feature branch'):
+                self.publisher.complete('codex/example', CHAT, CHAT, ['checks'])
+            load.assert_not_called()
+        git('checkout', 'codex/example', cwd=self.repo)
+        (self.repo / 'file').write_text('unreviewed')
+        with patch('runpy.run_path') as load:
+            with self.assertRaisesRegex(ValueError, 'clean'):
+                self.publisher.complete('codex/example', CHAT, CHAT, ['checks'])
+            load.assert_not_called()
+
+    def test_complete_cli_rejects_unsafe_argument_variants(self):
+        for tail in ([], ['--request', 'bad', '--check', 'checks'],
+                     ['--request', CHAT], ['--request', CHAT, '--check', ' '],
+                     ['--request', CHAT, '--check', 'checks', '--module', '/tmp/evil.py'],
+                     ['--request', CHAT, '--check', 'checks', '--expected-source', 'a' * 40]):
+            with self.subTest(tail=tail), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    MODULE['main'](['complete', 'customization', 'codex/example', CHAT, *tail])
+        for action in ('inspect', 'register', 'publish', 'finish'):
+            with self.subTest(action=action), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    MODULE['main']([action, 'customization', 'codex/example', CHAT,
+                                    '--request', CHAT, '--check', 'checks'])
 
     def test_creation_without_host_stays_single_chat_after_publish(self):
         subprocess.run(['/usr/bin/python3', str(self.root / 'branch_chats.py'),
