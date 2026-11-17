@@ -2,6 +2,7 @@
 import importlib.util
 import io
 import json
+import shlex
 from pathlib import Path
 import subprocess
 import tempfile
@@ -188,7 +189,12 @@ class HandoffTests(unittest.TestCase):
                  'cwd': str(self.repo), 'session_id': CHAT}
         response = hook.handle(event)
         self.assertNotIn('decision', response)
-        self.assertIn('--complete', response['hookSpecificOutput']['additionalContext'])
+        context = response['hookSpecificOutput']['additionalContext']
+        command = context.split('invoke the protected executable directly: ', 1)[1].split(' (repeat --check', 1)[0]
+        argv = shlex.split(command.rstrip('.'))
+        self.assertEqual(argv[:5], [str(hook.PUBLISHER), 'complete', str(self.repo), 'codex/example', CHAT])
+        self.assertEqual(argv[5], '--request')
+        self.assertEqual(argv[7:], ['--check', 'actual successful check command'])
         path = hook.request_path(self.repo / '.git', CHAT)
         request = json.loads(path.read_text())
         git(self.repo, 'commit', '-am', 'finish feature')

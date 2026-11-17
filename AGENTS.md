@@ -49,7 +49,7 @@ working directory and checks this chat's participation and verified commit.
 
 Ready work publishes directly. Work needing preparation reaches the assistant
 with a scoped request from the hook; complete that work and invoke the hook's
-`--complete` handoff within the same turn. Do not ask for a separate commit or
+direct protected `codex-git complete` handoff within the same turn. Do not ask for a separate commit or
 preparation command. Preserve unrelated work and stop for genuine blockers or
 ambiguous scope. An unavailable hook or failed publication does not authorize
 blind manual fallback. Publication never archives chats. `mpa` remains retired.
