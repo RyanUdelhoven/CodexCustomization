@@ -22,11 +22,24 @@ def git(repo, *args):
 
 
 class DispatchTests(unittest.TestCase):
-    def test_exact_command_dispatches_using_event_identity(self):
-        with patch.object(hook, 'publish', return_value='published') as publish:
-            result = hook.handle({'hook_event_name': 'UserPromptSubmit', 'prompt': ' \nmp\t', 'cwd': '/task', 'session_id': CHAT})
-        publish.assert_called_once_with('/task', CHAT)
-        self.assertEqual(result['decision'], 'block')
+    def setUp(self):
+        inventory = {'repository': '/task', 'common': '/tmp/mp-dispatch-unused',
+                     'branches': [{'branch': 'codex/example', 'head': 'a'*40}], 'worktrees': []}
+        mock_inventory = patch.object(hook, 'project_inventory', return_value=inventory)
+        mock_inventory.start()
+        self.addCleanup(mock_inventory.stop)
+        mock_git = patch.object(hook, 'git', side_effect=lambda cwd, *args:
+                                'codex/example' if args[-1] == 'HEAD' else '/task')
+        mock_git.start()
+        self.addCleanup(mock_git.stop)
+
+    def test_exact_command_requests_project_plan_without_publication(self):
+        with patch.object(hook, 'request_project', return_value={'planned': True}) as plan, patch.object(hook, 'publish') as publish:
+            event={'hook_event_name':'UserPromptSubmit','prompt':' \nmp\t','cwd':'/task','session_id':CHAT}
+            result=hook.handle(event)
+        self.assertTrue(result['planned'])
+        plan.assert_called_once()
+        publish.assert_not_called()
 
     def test_mentions_other_events_and_bad_payloads_do_nothing(self):
         events = [None, [], {}, {'hook_event_name': 'Stop', 'prompt': 'mp'}]
@@ -39,11 +52,10 @@ class DispatchTests(unittest.TestCase):
             publish.assert_not_called()
 
     def test_failure_is_consumed_without_assistant_fallback(self):
-        with patch.object(hook, 'publish', side_effect=ValueError('not ready')) as publish:
-            result = hook.handle({'hook_event_name': 'UserPromptSubmit', 'prompt': 'mp'})
-        self.assertEqual(result['decision'], 'block')
-        self.assertEqual(publish.call_count, 1)
-        self.assertIn('not ready', result['reason'])
+        with patch.object(hook, 'project_inventory', side_effect=ValueError('inventory failed')):
+            result=hook.handle({'hook_event_name':'UserPromptSubmit','prompt':'mp','cwd':'/task','session_id':CHAT})
+        self.assertEqual(result['decision'],'block')
+        self.assertIn('inventory failed',result['reason'])
 
     def test_json_cli_contract_and_invalid_input(self):
         for value in ('not json', json.dumps({'hook_event_name': 'UserPromptSubmit', 'prompt': 'hello'})):
@@ -77,7 +89,7 @@ class HandoffTests(unittest.TestCase):
         self.patcher.start()
         self.addCleanup(self.patcher.stop)
 
-    def publisher(self, action, repo, branch, session, expected_source=None):
+    def publisher(self, action, repo, branch, session, expected_source=None, expected_remote=None):
         self.calls.append((action, str(repo), branch, session, expected_source))
         if action == 'inspect':
             return self.inspection
@@ -190,13 +202,11 @@ class HandoffTests(unittest.TestCase):
         response = hook.handle(event)
         self.assertNotIn('decision', response)
         context = response['hookSpecificOutput']['additionalContext']
-        command = context.split('invoke the protected executable directly: ', 1)[1].split(' (repeat --check', 1)[0]
-        argv = shlex.split(command.rstrip('.'))
-        self.assertEqual(argv[:5], [str(hook.PUBLISHER), 'complete', str(self.repo), 'codex/example', CHAT])
-        self.assertEqual(argv[5], '--request')
-        self.assertEqual(argv[7:], ['--check', 'actual successful check command'])
+        self.assertIn('plan-project', context)
+        self.assertIn('JSON array', context)
         path = hook.request_path(self.repo / '.git', CHAT)
         request = json.loads(path.read_text())
+        hook.extend_project(str(self.repo), CHAT, request['request_id'], {})
         git(self.repo, 'commit', '-am', 'finish feature')
         self.head = git(self.repo, 'rev-parse', 'HEAD')
         self.inspection['head'] = self.inspection['feature'] = self.head
@@ -240,6 +250,7 @@ class HandoffTests(unittest.TestCase):
         hook.handle(event)
         path = hook.request_path(self.repo / '.git', CHAT)
         request = json.loads(path.read_text())
+        hook.extend_project(str(self.repo), CHAT, request['request_id'], {})
         original = hook.prepare
         def interrupted(*args, **kwargs):
             result = original(*args, **kwargs)

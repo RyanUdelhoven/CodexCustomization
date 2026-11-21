@@ -42,18 +42,35 @@ skill changes. Require a separate explicit user request for those actions.
 Archival is always a separate user-controlled action; publication never closes chats.
 
 An exact standalone lowercase `mp` (ignoring surrounding whitespace) explicitly
-authorizes finishing and publishing the current task: final review, outstanding
-checks, staging/committing only reviewed task files, preparation, merge, push,
-and completed-branch cleanup. The hook gets the branch from Git in the supplied
-working directory and checks this chat's participation and verified commit.
+authorizes finishing and publishing every local and live remote feature branch in the current
+project, including pending changes in linked worktrees. Review and commit changes
+to their owning branches, then merge each branch individually through its own PR.
+Primary/default branches remain targets. Discover remote-only branches live, fetch
+and restore their exact frozen tips locally, then process them individually. Branches
+created after the finalized cycle snapshot are excluded. Do not collect different branches into one
+commit or PR. Already-integrated branches need verified cleanup, not empty commits.
 
-Ready work publishes directly. Work needing preparation reaches the assistant
-with a scoped request from the hook; complete that work and invoke the hook's
-direct protected `codex-git complete` handoff within the same turn. Do not ask for a separate commit or
-preparation command. Preserve unrelated work and stop for genuine blockers or
-ambiguous scope. An unavailable hook or failed publication does not authorize
-blind manual fallback. Publication never archives chats. `mpa` remains retired.
+The hook snapshots branches and owning worktrees. Complete outstanding checks and
+use each scoped protected `codex-git complete` handoff in the same turn; no separate
+commit, preparation, or mp command is required between branches. Bring verified
+published main into each next branch with a normal merge when needed, preserve
+commits, and rerun affected checks. Stop on genuine conflicts, failed checks,
+concurrent work, ambiguous change ownership, or denied access; report completed and
+remaining branches. Do not move dirty work between branches or disrupt active
+worktrees. Other projects remain outside the cycle. An unavailable hook or failed
+publication never authorizes blind manual fallback or retries. Configuring this
+behavior does not publish any changes. Publication never archives chats. `mpa`
+remains retired.
 Follow [shortcut interpretation](rules/merge-push.md#contextual-shortcuts).
+
+At the end of every `mp` cycle, including a stopped or partially completed cycle,
+append a bullet list of all remaining open feature branches in the current project
+to the final report. Verify local branches across linked worktrees and live remote
+heads after the cycle; include branches outside the frozen publication snapshot
+without publishing them. Deduplicate matching local/remote names, label remote-only
+branches, and exclude primary/default target branches. If none remain, write
+“Remaining open branches: None.” If discovery fails, label the list incomplete and
+state the verification limit; never claim none remain without verification.
 
 ## New app runtime and local use
 
@@ -93,6 +110,19 @@ Do not hide clipped content merely to remove a horizontal scrollbar.
 - Keep each bullet to 15 words or fewer.
 - Keep summaries to 200 words or fewer.
 - Keep responses to 500 words or fewer unless an exception below applies.
+
+## End-of-turn change reports
+
+After code or repository customization changes, give one concise report covering
+changes made, validation results and meaningful limits, branch names and local
+change/commit status, publication state, and any unrelated work preserved.
+Include required personal actions, or “None.” Include a concrete component-library
+creation suggestion only when the current UI task exposes a relevant roadmap gap
+or useful variant; `component-library-reuse` owns that assessment. Omit empty
+suggestion placeholders. Keep the existing conversational style; these are report
+contents, not a mandatory large template. Combine specialized skill results into
+this report rather than repeating summaries. State only verified branch and
+publication facts; say when status could not be verified.
 
 ## Long lists
 

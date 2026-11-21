@@ -206,4 +206,10 @@ and [approval triggers](https://learn.chatgpt.com/docs/sandboxing/auto-review).
 `git-workflow.rules` is the canonical reviewed Git policy. Raw pushes and branch
 operations retain approval prompts. The protected publish helper provides the
 validated route without repeated shell approvals; see [publish helper](publish-helper.md).
-Do not whitelist its writable source or its installer. Restart Codex after installation.
+Do not whitelist its writable source or its installer. Restart Codex after policy
+changes; verify file-only helper updates through their installed entrypoint.
+
+GitHub access failures across all projects follow
+[shared access recovery](merge-push.md#github-access-recovery-all-git-actions).
+Use bounded protected live reads rather than treating cached origin refs as live
+state or using publication as an access test.
