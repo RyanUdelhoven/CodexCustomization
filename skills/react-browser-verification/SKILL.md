@@ -5,6 +5,8 @@ description: Verify or reproduce a React user journey in a running app with brow
 
 # React Browser Verification
 
+Use the critical-point timing policy in [code-change-verification](../code-change-verification/SKILL.md). Batch relevant journeys into one final browser pass before reporting browser-facing work complete. During development, use a focused journey only when requested, required by the repository, needed to reproduce or confirm a defect, or needed to resolve a consequential uncertainty before continuing. Routine edits and progress updates do not trigger another live pass. Reuse the final pass at merge/push unless relevant inputs or runtime state changed; do not repeat unrelated journeys after a scoped fix.
+
 - Use the repo's configured browser runner, app URL, and test data. For a specialized hosting environment, follow its supported preview and browser-control requirements; do not substitute a runner or install a browser when that workflow disallows it. Report an unavailable required journey as unverified. Identify the initial state and a user-visible success condition. Keep mutations within authorized test data.
 - Follow the journey through the real UI. Prefer accessible locators and waits tied to observable state. Check reload or navigation only when the flow depends on them.
 - On failure, capture the smallest useful evidence, such as a trace, screenshot, or relevant console or network error. Keep secrets and personal data out of evidence.
