@@ -5,6 +5,8 @@ description: Create or reuse a relevant feature branch before repository edits, 
 
 # Work on a feature branch
 
+For a requested new Git repository, apply [repository-bootstrap](../repository-bootstrap/SKILL.md) first. It owns the one-time initial commit on the primary branch and optional first GitHub push; subsequent implementation follows this skill.
+
 Before editing repository files, inspect applicable guidance, the current branch, and working-tree state. Never implement changes on `main`, `master`, or the repository's default branch. Read-only investigation may use any branch.
 
 When the user requests code changes, automatically create or switch to the relevant feature branch in the user’s working checkout before editing. Treat the request as authorization to switch branches; do not ask for routine confirmation. Keep that checkout on the task branch while implementing so the user can continually inspect and verify updates. Announce the active branch after verifying it.
