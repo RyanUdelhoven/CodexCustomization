@@ -1,6 +1,6 @@
 ---
 name: post-merge-cleanup
-description: Publish explicitly requested work through GitHub pull requests, preserve commits, and clean completed branches. Keep chats open; archive only on a separate explicit chat request. The exact mp command authorizes preparation and hook publication; mpa is retired.
+description: Verify branch integration, investigate merge conflicts and resolve them from user answers, then publish explicitly authorized work through GitHub PRs and clean verified branches. Keep chats open; mp authorizes the project cycle, and mpa is retired.
 ---
 
 # Post-merge cleanup
@@ -13,11 +13,18 @@ For a newly requested repository’s initial GitHub connection, [repository-boot
 
 ## Routine completion
 
-For a scoped mp preparation request, review every frozen branch, reuse valid checks, run outstanding gates, and commit all reviewed pending changes to their owning branches. Do not move dirty files across branches or combine different branches into one commit/PR. Register missing participation normally. Then invoke the protected `codex-git complete` executable directly with the repository, branch, chat, request ID, and real successful checks supplied by the hook protocol in [merge/push execution](../../rules/merge-push.md#preparation-within-mp). Workspace Python or shell wrappers would prevent its own executable rule from applying to Git metadata writes. For a project plan, use its primary checkout as coordinator, prepare each owning worktree first, and process branches separately using the same request UUID. Bring verified main into each next branch with a normal merge when necessary and rerun affected checks. Detach linked feature worktrees only when clean and idle. Already-integrated branches need verified cleanup rather than empty commits/PRs. Continue using the returned remaining list; stop on genuine conflicts, failed gates, active worktrees, or partial publication. The handoff prepares and publishes; do not ask the user for another command or independently publish a second time. Stop for real blockers or ambiguous scope, preserve unrelated work, and leave the chat open.
+Before preparing a merge, compare the branch's committed tip with live published
+main and inspect its pending changes. A surviving name does not prove missing
+integration; an integrated tip does not include dirty files. Apply
+[integration and conflict resolution](../../rules/merge-push.md#integration-and-conflict-resolution)
+to classify the branch, ask focused questions before resolving conflicts, and
+verify the answers in the resulting contents. Cleanup-only branches need no
+empty commit or duplicate PR. Necessary work is committed on its owning branch,
+published through the protected PR flow, and verified in live main before deletion.
+
+For a scoped mp preparation request, review every frozen branch, reuse valid checks, run outstanding gates, and commit all reviewed pending changes to their owning branches. Do not move dirty files across branches or combine different branches into one commit/PR. Register missing participation normally. Then invoke the protected `codex-git complete` executable directly with the repository, branch, chat, request ID, and real successful checks supplied by the hook protocol in [merge/push execution](../../rules/merge-push.md#preparation-within-mp). Workspace Python or shell wrappers would prevent its own executable rule from applying to Git metadata writes. For a project plan, use its primary checkout as coordinator, prepare each owning worktree first, and process branches separately using the same request UUID. Bring verified main into each next branch with a normal merge when necessary and rerun affected checks. Detach linked feature worktrees only when clean and idle. Already-integrated branches need verified cleanup rather than empty commits/PRs. Continue using the returned remaining list. Investigate conflicts and ask focused questions under the shared conflict workflow; pause publication until the answers are applied and checked. Stop for failed gates, active worktrees, or partial publication. The handoff prepares and publishes; do not ask the user for another command or independently publish a second time. Stop for real blockers or ambiguous scope, preserve unrelated work, and leave the chat open.
 
 Even already-ready mp requests must finish live remote discovery before publication. For other explicitly requested publication, reuse one protected inspection/receipt and run only outstanding required gates. Never skip secret scanning or publication checks. Failed publication needs state inspection before recovery.
-
-For GitHub/network failures, use [shared access recovery](../../rules/merge-push.md#github-access-recovery-all-git-actions). Diagnose policy versus authentication, permissions, and missing refs; prefer protected live reads for inspection. A failed push/merge may already have changed GitHub: inspect live heads and matching PR state before deliberate recovery. Never blindly retry publication, duplicate a PR, or use a read request as mutation authorization. Leases, readiness, and secret gates still apply.
 
 For GitHub/network failures, use [shared access recovery](../../rules/merge-push.md#github-access-recovery-all-git-actions). Diagnose policy versus authentication, permissions, and missing refs; prefer protected live reads for inspection. A failed push/merge may already have changed GitHub: inspect live heads and matching PR state before deliberate recovery. Never blindly retry publication, duplicate a PR, or use a read request as mutation authorization. Leases, readiness, and secret gates still apply.
 

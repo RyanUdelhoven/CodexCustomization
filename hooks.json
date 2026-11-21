@@ -1,5 +1,5 @@
 {
-  "description": "Explicit mp publication, permission/usage capture, Navi approval, and OoT completion sounds.",
+  "description": "Explicit mp publication, permission/usage capture, Navi questions/approval, and OoT completion sounds.",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -41,6 +41,18 @@
           {
             "type": "command",
             "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/skills/approval-review/scripts/skill_usage.py\" capture",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^(functions\\.)?request_user_input(_async)?$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/scripts/approval-sound.py\"",
             "timeout": 5
           }
         ]

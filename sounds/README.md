@@ -8,7 +8,14 @@ Audio stays local; run `python3 scripts/download-sounds.py` to download the clip
 
 The game audio belongs to its respective rights holders and is not included in this repository.
 
-The approval hook always plays Hey, then independently has a one-in-six chance of playing Listen after Hey finishes.
+The attention hook plays Hey for structured user-question calls and manually
+reviewed permission requests. Automatic permission review stays silent. It
+independently has a one-in-six chance of playing Listen after Hey finishes.
+Questions use `PreToolUse` matching `request_user_input` or
+`request_user_input_async` (including the `functions.` prefix), once per batch.
+They do not depend on transcript context or approval-review settings. If no
+question tool is available, invoke `scripts/approval-sound.py --question` before
+the real text question; do not duplicate a structured tool's alert.
 When a local trimmed `navi-listen.wav` exists, the hook uses it instead of the MP3.
 The hook chooses all clips before playback. When local `navi-hey-listen-soft.wav` exists, it plays that combined recording for the one-in-six outcome, avoiding a process restart between words. This version reduces only Listen's samples by 10%. Hey plays at 75%; standalone Listen plays at 67.5%.
 

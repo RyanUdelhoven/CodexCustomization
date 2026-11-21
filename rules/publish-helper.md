@@ -168,11 +168,20 @@ adds remote-only branches and freezes their exact tips. The agent commits review
 uses the primary worktree as coordinator and one request UUID across separate
 `complete` calls. Each branch retains its own check evidence, verified SHA, PR,
 merge commit, receipt, and cleanup. New user input or the 30-minute timeout cancels
-remaining authorization; failed/partial publication prevents replay or continuation.
+the remaining scoped request; failed/partial publication prevents blind replay or continuation.
 Live remote-only branches are included after exact-tip restoration; later-created branches are excluded. Primary or detached dirty
 work must be assigned explicitly before entering the cycle. Linked feature
 worktrees may be detached only after committing, cleanliness checks, and idle-work
 verification. Required checks run in the normal sandbox, never in this helper.
+
+Check live-main integration and pending work before merge preparation. Conflicts
+route to user questions and verified resolution under
+[the shared workflow](merge-push.md#integration-and-conflict-resolution).
+A resolution-and-continuation answer naming the remaining frozen scope can
+authorize the registered workflow after the reply cancels the old mp token.
+Use fresh inspection and the publisher's existing `--expected-source` and
+`--expected-remote` guards; never edit or replay cancelled/expired request files,
+extend scope to new branches, or retry a partial publication blindly.
 
 The publisher accepts bounded literal feature-branch names beyond `codex/` for
 existing project branches, while still refusing main/master sources and unsafe

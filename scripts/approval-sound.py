@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Play Navi only for permission requests handled by the user, not auto-review."""
+"""Play Navi for user questions and manually reviewed permission requests."""
 import argparse
 import json
 import os
@@ -7,6 +7,34 @@ from pathlib import Path
 from secrets import randbelow
 import subprocess
 import sys
+
+
+QUESTION_TOOLS = frozenset({
+    "request_user_input", "request_user_input_async",
+    "functions.request_user_input", "functions.request_user_input_async",
+})
+
+
+def is_question(payload):
+    """Recognize an actual structured question without reading chat history."""
+    if (not isinstance(payload, dict) or payload.get("hook_event_name") != "PreToolUse"
+            or not isinstance(payload.get("tool_name"), str)
+            or payload["tool_name"] not in QUESTION_TOOLS):
+        return False
+    arguments = payload.get("tool_input")
+    if isinstance(arguments, str):
+        try:
+            arguments = json.loads(arguments)
+        except (ValueError, UnicodeError):
+            return False
+    if not isinstance(arguments, dict):
+        return False
+    questions = arguments.get("questions")
+    if not isinstance(questions, list) or not questions:
+        return False
+    field = "title" if payload["tool_name"].endswith("_async") else "question"
+    return all(isinstance(q, dict) and isinstance(q.get(field), str)
+               and bool(q[field].strip()) for q in questions)
 
 
 def reverse_lines(path):
@@ -61,14 +89,17 @@ def needs_user(payload):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--preview", action="store_true", help="Play a sound without a hook event")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--preview", action="store_true", help="Play a sound without a hook event")
+    mode.add_argument("--question", action="store_true",
+                      help="Alert once for a real text question when no question tool is available")
     args = parser.parse_args()
-    if not args.preview:
+    if not args.preview and not args.question:
         try:
             payload = json.load(sys.stdin)
         except (ValueError, OSError):
             return
-        if not needs_user(payload):
+        if not is_question(payload) and not needs_user(payload):
             return
     sounds = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))) / "sounds"
     clips = [(sounds / "navi-hey.mp3", "0.75")]
