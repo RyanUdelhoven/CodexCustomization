@@ -55,6 +55,23 @@ ambiguous scope. An unavailable hook or failed publication does not authorize
 blind manual fallback. Publication never archives chats. `mpa` remains retired.
 Follow [shortcut interpretation](rules/merge-push.md#contextual-shortcuts).
 
+## Routine inspection and skill recording
+
+For ordinary checkout inspection, run `git status --short` and
+`git rev-parse --abbrev-ref HEAD` directly in the checkout's working directory.
+These commands already have reusable allowances. Prefer the latter over
+`git branch --show-current`, which matches the raw branch approval boundary.
+In detached HEAD state it prints `HEAD`; do not treat that as a branch name.
+Do not broaden raw branch allowances: trailing options can turn inspection into mutation.
+
+Invoke `/Users/ryanudelhoven/.local/share/codex-publish/codex-skill-usage`
+directly for skill recording. Its existing allowance covers variable sessions,
+skill lists, project paths, task descriptions, and run IDs; do not create
+per-session or per-task rules or wrap it in Python or a shell helper.
+Use normal sandbox permissions first. If a covered command still prompts,
+inspect the complete invocation and loaded policy rather than adding duplicate
+allowances. These preferences grant no additional task or filesystem authorization.
+
 ## Read-only inspection
 
 Perform routine read-only inspection without asking for conversational permission.

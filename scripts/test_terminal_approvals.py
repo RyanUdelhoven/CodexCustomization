@@ -86,6 +86,37 @@ class RestrictedReaderTests(unittest.TestCase):
 
 
 class InstalledPolicyTests(unittest.TestCase):
+    def test_routine_inspection_and_variable_skill_markers(self):
+        rules = [item for path in sorted((ROOT / 'rules').glob('*.rules'))
+                 for item in ('--rules', str(path))]
+        helper = '/Users/ryanudelhoven/.local/share/codex-publish/codex-skill-usage'
+        cases = [
+            (['git', 'status', '--short'], 'allow'),
+            (['git', 'rev-parse', '--abbrev-ref', 'HEAD'], 'allow'),
+            (['git', 'branch', '--show-current'], 'prompt'),
+            (['git', 'branch', '--show-current', '--no-show-current', '-D', 'victim'], 'prompt'),
+            (['git', 'branch', '-D', 'main'], 'forbidden'),
+            ([helper, 'start', '--session', '01a1d5a1-1a88-7640-bcaa-d43069ee7f04',
+              '--skills', 'feature-branch', 'react-component-builder', '--cwd',
+              '/Users/ryanudelhoven/development/projects/MoneyNotes',
+              '--task', 'Reorder summary submetrics'], 'allow'),
+            ([helper, 'start', '--session', 'another-session', '--skills', 'approval-review',
+              '--cwd', '/tmp/another-project', '--task', 'A different task'], 'allow'),
+            ([helper, 'finish', '--runs', 'another-run'], 'allow'),
+            (['python3', str(ROOT / 'skills/approval-review/scripts/skill_usage.py'),
+              'start', '--session', 'another-session', '--skills', 'approval-review'], None),
+            # The CLI checks argv literally; wrapper handling belongs to the executor.
+            # These assertions establish that no shell-wrapper allow was added.
+            (['/bin/zsh', '-lc', 'git status --short && git branch -D main'], None),
+            (['/bin/zsh', '-lc', helper + " start --session example --skills approval-review "
+              "--task 'Variable task' && git branch --show-current"], None),
+        ]
+        for command, expected in cases:
+            with self.subTest(command=command):
+                result = subprocess.check_output(
+                    [CODEX, 'execpolicy', 'check', *rules, '--', *command], text=True)
+                self.assertEqual(json.loads(result).get('decision'), expected)
+
     def test_development_uses_sandbox_without_new_unsandboxed_grants(self):
         rules = [item for path in sorted((ROOT / "rules").glob("*.rules"))
                  for item in ("--rules", str(path))]
