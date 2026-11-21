@@ -72,6 +72,42 @@ branches, and exclude primary/default target branches. If none remain, write
 “Remaining open branches: None.” If discovery fails, label the list incomplete and
 state the verification limit; never claim none remain without verification.
 
+## Routine inspection and skill recording
+
+Perform routine read-only inspection without conversational permission. Run
+`git status --short` and `git rev-parse --abbrev-ref HEAD` in the checkout;
+use `git for-each-ref` for branch listings. Detached HEAD prints `HEAD`.
+Git branch operations are allowed under the reviewed policy; deleting main remains
+forbidden. Keep raw pushes behind their existing approval boundary. Branch
+allowances do not authorize deleting unmerged work or bypassing protected cleanup.
+
+Invoke `/Users/ryanudelhoven/.local/share/codex-publish/codex-skill-usage`
+directly with variable session IDs, skills, paths, task descriptions, and run IDs.
+Do not add per-task rules or wrap the recorder in Python or a shell helper.
+Use normal sandbox permissions first; diagnose the complete invocation and loaded
+policy if a covered command still prompts. Managed access restrictions remain.
+
+## Routine testing authorization
+
+Requests to implement or fix a feature authorize creating, updating, and running
+the relevant tests, builds, type checks, lint checks, and local browser checks.
+Perform these checks without asking for separate conversational permission.
+Run commands inside the project sandbox first; do not preemptively escalate tests.
+Keep test artifacts, temporary profiles, caches, and reports in the workspace or
+system temporary directories whenever the tools support those locations.
+Use existing browser tools for local interactive checks when suitable.
+
+The `local-testing` permission profile enables loopback test-server access while
+retaining workspace filesystem protections. Prefer `localhost`, `127.0.0.1`,
+`::1`, or app-specific `.localhost` URLs for local checks. Managed policy and
+an existing chat's selected permissions may override the configured default.
+Eligible approval requests route to Codex's automatic reviewer by default;
+this includes necessary browser-test escalations that the macOS sandbox blocks.
+If a check still requires approval, identify the actual blocked capability;
+do not treat a test filename or runner name as proof of bounded execution.
+This authorization does not cover deployment, publication, destructive data
+resets, unrelated filesystem changes, or bypassing managed security controls.
+
 ## New app runtime and local use
 
 All new app projects must include working Docker packaging. Apply `dockerize-app`
@@ -93,6 +129,30 @@ including verified bookmark-triggered startup. If no, retain Docker packaging an
 omit Coulson registration. If Coulson cannot support the app's platform, explain
 that limitation when asking and resolve the local-use approach with the user.
 Local personal use through Coulson does not request public hosting or deployment.
+
+## Browser automation on macOS
+
+Prefer the supported built-in browser for inspecting websites and local apps.
+Use the supported Chrome connection when a task needs the user's Chrome session.
+Follow specialized hosting and browser-tool requirements. Preserve repository-defined
+test runners and required checks; interactive browser inspection does not replace them.
+
+Do not launch installed Chrome, Chrome for Testing, or Chromium directly from a
+restricted shell on macOS, including through Node, Playwright, Puppeteer, headless
+flags, or fallback scripts. A headless launch still needs macOS system services.
+When a repository-defined browser test needs a local browser process, use the
+approved execution mechanism outside the restricted sandbox, subject to existing
+permissions. Request approval only when required; never disable the sandbox globally,
+add broad command allowances, or use Chrome's `--no-sandbox` flag as a workaround.
+If an allowed launch path is unavailable, report the check as blocked or unverified.
+
+Treat an immediate `SIGABRT` / `Abort trap: 6` with `_RegisterApplication` or
+`TransformProcessType` frames as a browser startup failure, not an application-test
+failure. Stop retries through that launch path. Capture minimal diagnostic evidence,
+then use an allowed supported browser or approved external execution path. Do not
+repeat the failing launch, reinstall browsers, switch profiles, or substitute another
+Chromium binary merely to retry the same restricted path. Verify any replacement
+path with one minimal launch before running the required journey or test suite.
 
 ## Design preferences
 

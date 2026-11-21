@@ -88,7 +88,7 @@ before retrying; no automatic rollback, reset, or force push occurs. Failed clea
 preserves tracking history and requires ordinary repair. The helper never archives
 chats. Archival requires a separate explicit chat request and uses the app tool; publication never triggers it.
 
-`git-workflow.rules` owns reviewed Git grants and raw push/branch prompts.
+`git-workflow.rules` owns reviewed Git grants, raw push prompts, and main-branch deletion prohibitions.
 Historical grants for those same command contexts were removed from the local
 `default.rules`; unrelated grants remain. Keep raw commands prompted. The protected
 helper has a separate executable allow rule, so these prompts do not match it.

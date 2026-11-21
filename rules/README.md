@@ -201,11 +201,62 @@ not whether the desktop has reloaded them or stopped displaying prompts.
 Sources: [OpenAI command rules](https://learn.chatgpt.com/docs/agent-configuration/rules)
 and [approval triggers](https://learn.chatgpt.com/docs/sandboxing/auto-review).
 
+## Routine inspection and variable skill recording (November 13, 2026)
+
+Use `git status --short`, `git rev-parse --abbrev-ref HEAD`, and `git for-each-ref`
+for ordinary inspection. The reviewed branch policy allows branch operations;
+main-deletion prohibitions and raw-push prompts remain. These command grants do
+not authorize removing unmerged history.
+
+The installed `codex-skill-usage` executable already has a reusable allowance.
+Session IDs, skill lists, `--cwd`, task descriptions, and finish run IDs may vary;
+no per-task rule or interpreter grant is needed. Keep the previously reviewed
+executable allowance, including its existing status and telemetry operations.
+Its arguments are parsed as data, not shell commands. Source changes still
+require reviewed installation before they affect the protected executable.
+
+Global instructions now prefer these covered forms. No execution rule changed;
+policy checks establish expected decisions, not desktop activation or prompt absence.
+
+## Local testing defaults (November 13, 2026)
+
+The machine-local `config.toml` selects `default_permissions = "local-testing"`.
+That profile extends `:workspace`, preserving protected paths and workspace-only
+writes, and enables `features.network_proxy = true`. Its allowed destinations are
+`localhost`, `*.localhost`, `127.0.0.1`, and `::1`; public command traffic remains
+blocked. `allow_local_binding = true` permits the allowed `.localhost` hostnames
+to resolve locally. Names still require working local DNS. No Unix socket or
+Docker daemon access is added. The configuration is intentionally Git-ignored.
+
+`approval_policy = "on-request"` and `approvals_reviewer = "auto_review"` route
+eligible requests to Codex's automatic reviewer. This is a general reviewer
+default, not a test-command allowlist: it also reviews eligible requests outside
+testing. Review can deny actions, and managed or chat-specific settings take
+precedence. Automatic review consumes additional model usage. Global instructions
+authorize routine test work without separate conversational permission while
+preserving task scope and publication requirements.
+
+Verified using the installed CLI's `codex sandbox --include-managed-config
+-P local-testing -- COMMAND`: workspace writes, protected `.git`, proxied HTTP to
+localhost and 127.0.0.1, and rejection of public HTTP. A Playwright Chrome launch
+still aborted inside this macOS sandbox; the automatic reviewer is the fallback
+for necessary escalations, rather than an unrestricted test-runner allowance.
+Browser tools remain a suitable alternative for interactive checks.
+
+Restart Codex and use the new default profile in a new chat, or select it where
+the app permits. Existing chats can retain their previous permissions. Live
+automatic-review activation and absence of human dialogs remain unverified.
+Do not disable approvals or the sandbox to resolve those activation questions.
+
+Sources: [OpenAI permission profiles](https://learn.chatgpt.com/docs/permissions)
+and [automatic approval review](https://learn.chatgpt.com/docs/agent-approvals-security#automatic-approval-reviews).
+
 ## Merge and push workflow
 
-`git-workflow.rules` is the canonical reviewed Git policy. Raw pushes and branch
-operations retain approval prompts. The protected publish helper provides the
-validated route without repeated shell approvals; see [publish helper](publish-helper.md).
+For ordinary Git inspection, use direct read commands in the checkout's working
+directory. `git-workflow.rules` allows branch operations and forbids deleting main.
+Raw pushes retain approval prompts. Use the protected publisher for verified
+publication and cleanup; see [publish helper](publish-helper.md).
 Do not whitelist its writable source or its installer. Restart Codex after policy
 changes; verify file-only helper updates through their installed entrypoint.
 
