@@ -54,9 +54,14 @@ The hook snapshots branches and owning worktrees. Complete outstanding checks an
 use each scoped protected `codex-git complete` handoff in the same turn; no separate
 commit, preparation, or mp command is required between branches. Bring verified
 published main into each next branch with a normal merge when needed, preserve
-commits, and rerun affected checks. Stop on genuine conflicts, failed checks,
-concurrent work, ambiguous change ownership, or denied access; report completed and
-remaining branches. Do not move dirty work between branches or disrupt active
+commits, and rerun affected checks. Check each branch against live published main
+before preparing a merge; examine pending work before calling it integrated.
+For conflicts, investigate both sides, ask focused behavior questions, apply the
+answers, and verify the resolution before continuing authorized publication.
+Follow the conflict-continuation rules below for replies that invalidate a scoped
+request. Stop publication for unresolved choices, failed checks, concurrent work,
+ambiguous ownership, or denied access; report completed and remaining branches.
+Do not move dirty work between branches or disrupt active
 worktrees. Other projects remain outside the cycle. An unavailable hook or failed
 publication never authorizes blind manual fallback or retries. Configuring this
 behavior does not publish any changes. Publication never archives chats. `mpa`
@@ -71,6 +76,11 @@ without publishing them. Deduplicate matching local/remote names, label remote-o
 branches, and exclude primary/default target branches. If none remain, write
 “Remaining open branches: None.” If discovery fails, label the list incomplete and
 state the verification limit; never claim none remain without verification.
+
+Integration checks, conflict questions, continuation after answers, and final
+cleanup follow [the shared workflow](rules/merge-push.md#integration-and-conflict-resolution).
+After resolving and checking a branch, commit necessary changes, publish through
+the protected PR workflow, verify its tip in live main, and only then delete it.
 
 ## Routine inspection and skill recording
 
@@ -222,6 +232,24 @@ When the user requests coverage of many listed items:
 ## New skill review
 
 Whenever you author a new Codex skill, apply `skill-deconfliction` from `~/.codex/skills/skill-deconfliction/SKILL.md` before installing it. Review the draft against available skills, align affected writable custom skills, then validate and install the draft.
+
+Before implementing a requested new reusable Codex capability, check the available
+skill library for an existing owner. Describe a relevant capability's current
+triggers and scope, explain the requested difference, and ask whether to amend
+that capability rather than add a duplicate. Follow
+[the capability preflight](skills/skill-deconfliction/SKILL.md#new-capability-preflight).
+Reuse explicit amendment choices already given for the task. A keyword such as
+“new” in an ordinary app-feature request does not itself request skill changes.
+
+## Questions and attention sounds
+
+Use a structured user-question tool when available, including for merge conflicts
+and capability-amendment choices. The Navi `PreToolUse` hook alerts once per
+question batch; do not also invoke playback manually. When no question tool is
+available and a real answer is needed, invoke
+`python3 /Users/ryanudelhoven/.codex/scripts/approval-sound.py --question` once
+immediately before presenting the text question. Rhetorical questions and progress
+updates do not trigger playback. Hook trust or audio failures do not block asking.
 
 ## Skill usage measurement
 

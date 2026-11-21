@@ -42,8 +42,10 @@ branches before dependent ones. For each branch, bring verified published main
 into it with a normal merge if needed, resolve authorized conflicts, and run
 required checks for the resulting contents. Preserve existing commits; do not
 squash branches together, cherry-pick away scope, rebase shared history, or force-push.
-Stop the cycle for a genuine conflict, failed check, active worktree, changed remote
-tip, pending review, ambiguous scope, or denied access. Report successes and
+Investigate conflicts and ask the user before choosing disputed behavior; follow
+the resolution and continuation workflow below. Stop publication for an unanswered
+choice, failed check, active worktree, changed remote tip, pending review,
+ambiguous scope, or denied access. Report successes and
 remaining branches; never retry a partial publication blindly.
 
 Register this chat on each branch without claiming creation history. Write each
@@ -104,6 +106,68 @@ An unavailable or untrusted hook does not authorize an ad hoc raw-mp fallback.
 
 Separate explicit natural-language merge/push requests retain the protected
 workflow below. All paths leave chats open.
+
+## Integration and conflict resolution
+
+After live discovery, inspect each frozen branch before scheduling its merge.
+Fetch live main with the protected `fetch-ref` when its objects are needed; use
+the returned SHA rather than assuming cached origin/main is current. Record
+the source tip, live target tip, pending changes, and owning checkout. Classify:
+
+- Integrated tip and clean checkout: verified cleanup only; no empty commit or PR.
+- Integrated tip with pending work: review and commit that work before rechecking integration.
+- Unintegrated tip: inspect missing commits, merge verified main normally, then validate and publish.
+
+Use `git merge-base --is-ancestor SOURCE_SHA LIVE_MAIN_SHA` as ancestry evidence.
+Identical filenames, an empty final diff, or an old branch name do not prove
+integration. If prior squash/rebase publication is claimed, corroborate patch
+comparisons with the merged PR and target contents; patch equivalence alone does
+not prove history preservation or authorize forced deletion. Keep the existing
+protected publisher's ancestry and exact-tip requirements.
+
+When a merge conflicts, inspect the merge base, both sides, relevant callers,
+tests, and superseding instructions. Explain each meaningful behavior choice in
+plain language, with a recommended combined result when compatible. Bundle
+related questions through the structured question tool; ask about behavior,
+data, or scope rather than asking the user to edit Git markers or blindly choose
+“ours”/“theirs”. Include the affected remaining branch names and state that an
+answer selecting a resolution will continue their already-requested publication.
+Reuse applicable answers already given; ask again only for a new material choice.
+Continue independent read-only investigation while waiting, and leave dependent
+resolution/publication pending. Do not require another mp merely to ask questions.
+
+Apply the user's answers to the conflicted files and coordinated callers/tests.
+Preserve unrelated work and meaningful commits; do not drop a branch's scope to
+make the merge clean. Inspect the resolved diff, remove every conflict marker,
+run affected checks against the final contents, and commit the resolution only
+when appropriate. Recheck integration after new work is committed and after
+earlier branch publication advances main. Publish only missing work through the
+protected PR flow: push the verified feature tip, merge the PR, verify the source
+in live published main, synchronize local main, then delete the verified branch.
+Already-integrated branches use protected cleanup instead.
+
+### Continue after conflict answers
+
+User messages still cancel pending mp tokens, and their 30-minute expiry remains.
+Do not resurrect, edit, or replay a cancelled/consumed request. If the conflict
+question explicitly offered resolution followed by publication of the named
+remaining branches, an answer selecting that option supplies a new explicit
+natural-language continuation request for that same scope. Use the registered
+protected `inspect`/`publish` or `cleanup`/`finish` workflow under that answer;
+this is deliberate continuation, not a retry of a failed publication. Retain
+the original frozen branch list and remote tips in the handoff. Revalidate live
+state, original-tip ancestry, ownership, resolved contents, and successful checks;
+pass the verified `--expected-source` and original `--expected-remote` SHA or
+`absent` to protected publish. Exclude new branches, stop if a frozen remote tip
+changed, and inspect receipts to skip branches already published. A stopped,
+ambiguous, or scope-changing reply is not continuation authorization. Failed or
+partial publication retains its existing no-blind-retry recovery requirements.
+
+At completion, verify local heads, linked worktrees, and live remote heads again.
+Prune stale remote-tracking references only after live absence is established,
+so deleted branch names do not linger in the branch chooser. Preserve main,
+unmerged or changed work, and explicit retention requests. Report completed work,
+real blockers, and every remaining open project feature branch as bullets.
 
 ## Remote feature branches
 

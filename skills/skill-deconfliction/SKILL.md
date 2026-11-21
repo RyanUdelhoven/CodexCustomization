@@ -1,15 +1,38 @@
 ---
 name: skill-deconfliction
-description: Deconflict the skill set whenever creating or updating a Codex skill, before installation or finalizing an update. Also use for requested skill-set audits. Review set-wide triggers, ownership, handoffs, precedence, shared dependencies, and duplicated workflows; align affected writable skills rather than reviewing only the current target.
+description: Check existing skill capabilities before adding new reusable Codex behavior, resolve amendment choices, and deconflict skill creation or updates before finalizing. Also use for requested skill-set audits; review ownership, handoffs, shared dependencies, and duplicated workflows.
 ---
 
 # Deconflict the skill set
 
 Treat the installed and session-available skills as an interacting system. A creation or update starts the review; it does not define the review boundary. Apply this workflow to instruction, reference, metadata, or invocation-policy changes that can affect skill behavior, including changes to this skill itself.
 
+## New-capability preflight
+
+When the user requests a new reusable Codex capability, inspect the available
+skill names and descriptions, then read plausible existing owners. Include
+relevant hook or workflow instructions when the capability spans skills and
+configuration. Do this before choosing new skill packaging or implementation.
+
+If a relevant capability exists, name it, describe its current triggers and scope,
+and explain what the request would change. Ask whether to amend that existing
+capability or keep the proposed capability separate. Bundle related matches into
+one question and continue independent inspection while waiting. Do not make the
+dependent behavior change until the choice arrives. An explicit request to amend
+a named capability, or an amendment choice already given for this task, settles
+the choice; do not ask again. If several owners fit, explain their division and
+ask about the unresolved scope rather than selecting a duplicate arbitrarily.
+
+If no match exists, say so and proceed with the authorized new capability. An
+unavailable library is a disclosed discovery limit, not evidence of no overlap.
+This gate concerns reusable agent capabilities, skills, and their workflow/hook
+behavior. Ordinary app features do not request skill authoring merely because
+they are described as new. Skill-creator owns packaging; this skill owns reuse
+and deconfliction; research-backed-skill-builder owns relevant evidence gathering.
+
 ## Review creation, updates, and the existing set
 
-1. **Establish the change and inventory.** Identify the user's requirements, defaults, exceptions, and intended triggers. Stage new skills outside installed roots; for updates, preserve the current contents and prepare a reviewable diff before finalizing. For tool-managed template packages, review planned instructions and interactions before the owning workflow writes them, then validate the generated package; do not bypass that workflow by copying or hand-authoring its managed files. Inventory names, descriptions, locations, and available invocation policies for the whole session-available set, including custom, system, project, and plugin skills. Inspect discoverable local skills as relevant; distinguish installed but unavailable skills. Record material access gaps.
+1. **Establish the change and inventory.** Identify the user's requirements, defaults, exceptions, and intended triggers. For a new capability, settle the preflight reuse choice above before dependent implementation. Stage new skills outside installed roots; for updates, preserve the current contents and prepare a reviewable diff before finalizing. For tool-managed template packages, review planned instructions and interactions before the owning workflow writes them, then validate the generated package; do not bypass that workflow by copying or hand-authoring its managed files. Inventory names, descriptions, locations, and available invocation policies for the whole session-available set, including custom, system, project, and plugin skills. Inspect discoverable local skills as relevant; distinguish installed but unavailable skills. Record material access gaps.
 2. **Map interactions across the set.** Use the inventory to identify shared triggers, terminology, deliverables, dependencies, and workflow chains. Read full instructions and relevant references for plausible overlaps. For a set-wide audit, inspect every custom entrypoint and every overlapping group, even when unrelated to the initiating change. For an individual update, inspect affected neighbors and follow changed handoffs transitively until no material unresolved interaction remains. Use each skill's declared access mechanism; do not load unrelated references merely to complete an inventory.
 3. **Compare realistic requests.** Check each skill alone, shared triggers, mixed tasks, explicit overrides, and existing-project exceptions. Check scope, defaults, ownership, handoffs, ordering, report formats, repeated research or verification, and side effects. Distinguish complementary work from contradictory requirements. An overlap is not inherently a defect; avoid adding exclusions that prevent legitimate combined work.
 4. **Assign scoped ownership.** Follow higher-priority instructions and explicit user requests. Treat skill defaults as scoped preferences. Identify which skill owns each decision or action and what evidence another skill reuses. Avoid blanket priority among peer skills. Preserve existing-project conventions and user choices where applicable. Deconfliction owns skill interactions; skill-creator owns general packaging guidance and authoring validation; specialized template workflows own their managed packages; research owns evidence gathering when its research triggers apply; specialized workflows own their artifacts or implementation. A context-efficiency audit remains a separate task unless requested.

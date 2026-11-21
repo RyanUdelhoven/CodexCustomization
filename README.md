@@ -28,9 +28,11 @@ Download optional sounds without changing the hook:
 python3 scripts/download-sounds.py
 ```
 
-The approval sound script plays Navi Hey only when the active turn explicitly uses the `user` approval reviewer, with a one-in-six chance of Listen. `PermissionRequest` also fires for automatic review, before resolution; it is not proof that a person needs to approve. The script reads the latest runtime `turn_context` from the hook's transcript and checks its turn ID and reviewer, respecting session overrides instead of guessing from global configuration or `permission_mode`. Automatic review stays silent. Missing, stale, unreadable, or changed transcript context also stays silent; transcript format is not a stable hook API. Approval decisions and permission logging remain unchanged. Preview the sound explicitly with `python3 scripts/approval-sound.py --preview`.
+The attention sound script plays Navi Hey for structured user-question calls and manually reviewed permission requests, with the existing one-in-six Listen variant. The `PreToolUse` matcher covers `request_user_input` and `request_user_input_async`, with or without the `functions.` prefix. A question batch plays once; it does not inspect transcripts or depend on the approval reviewer. Other tools stay silent. When no question tool is available, `python3 scripts/approval-sound.py --question` alerts before a real text question; do not also invoke it for tool-based questions.
 
-Verify sound routing without playing audio: `python3 -B -m unittest discover -s scripts -p 'test_approval_sound.py'`. The current hook API has no separate event for a confirmed visible approval prompt, so the guard distinguishes reviewers rather than observing the UI. Other hooks can still resolve a manually reviewed request without a prompt. See [official hook semantics](https://learn.chatgpt.com/docs/hooks).
+`PermissionRequest` also fires for automatic review, before resolution; it is not proof that a person needs to approve. For permission events only, the script reads the latest runtime `turn_context` and checks its turn ID and explicit `user` reviewer. Automatic review and missing, stale, or changed transcript context stay silent. Approval decisions and permission logging remain unchanged. Preview explicitly with `python3 scripts/approval-sound.py --preview`.
+
+Verify sound routing without playing audio: `python3 -B -m unittest discover -s scripts -p 'test_approval_sound.py'`. A question alert observes a tool attempt, not confirmation that its UI opened. The permission guard distinguishes reviewers rather than observing the approval UI. Review/trust the changed hook in Settings > Hooks or `/hooks`, and reload existing sessions if necessary. Some tool paths may opt out of hooks; unit tests do not establish live desktop coverage. See [official hook semantics](https://learn.chatgpt.com/docs/hooks#tool-coverage).
 
 The [approval-review skill](skills/approval-review/SKILL.md) records permission
 requests locally without changing approval decisions. Review and trust the new
@@ -60,8 +62,26 @@ The hook freezes branch/worktree scope. The assistant prepares each branch, runs
 required checks, and invokes the scoped protected `codex-git complete` handoff for
 each one. It brings verified main into subsequent branches when needed and reruns
 affected checks. No additional commit or mp commands are needed between branches.
-Conflicts, active worktrees, failed checks, changed tips, and ambiguous ownership
-stop the cycle with a completed/remaining report. See [execution rules](rules/merge-push.md).
+Conflicts trigger investigation and focused user questions before resolution.
+Active worktrees, failed checks, changed tips, and unresolved choices stop
+publication with a completed/remaining report. See [execution rules](rules/merge-push.md).
+
+Conceptually, each mp cycle follows these steps:
+
+- Freeze local and live remote branch scope; preserve each branch's owning worktree.
+- Compare committed tips and pending work with live published main.
+- Skip duplicate merges for fully integrated branches.
+- Prepare missing work; investigate conflicts and ask about disputed behavior.
+- Apply answers, verify the resolved contents, and commit necessary changes.
+- Push each verified feature branch and merge its own PR.
+- Verify integration in live main, then delete completed local and remote branches.
+- Refresh branch inventory and report every remaining open branch, or None.
+
+Conflict questions name the remaining scope and explain that selecting a resolution
+continues its requested publication. A reply still cancels the old mp token; an
+explicit resolution-and-continuation answer proceeds through the protected
+registered workflow with fresh verification and the same frozen branch scope.
+Cancelled tokens are never replayed and new branches never join silently.
 
 The assistant stores successful check commands in a temporary JSON array and passes
 its literal path through `--checks-file`. This keeps `$PATH`, quotes and redirections
@@ -70,7 +90,7 @@ allowance. `codex-git probe` tests nested metadata access without publication or
 readiness; see [the helper contract](rules/publish-helper.md).
 
 Preparation reuses valid checks and preserves unrelated work. Genuine blockers,
-ambiguous scope, main/detached HEAD, conflicting remote history, or publication
+ambiguous scope, unassigned main/detached changes, conflicting remote history, or publication
 failures stop with an explanation in the app. The protected publisher retains its
 secret scans and exact-commit check. An interrupted preparation request expires
 on a later message or after 30 minutes; publication failures require state
