@@ -12,6 +12,8 @@ description: Implement or extend React and TypeScript components when UI constru
 
 ## Working with other skills
 
+For component-library work, ask “Are these components for Vantage at work?” before choosing target-dependent dependencies or integrations, unless already answered for this component or batch. On yes, apply [vantage-component-handoff](../vantage-component-handoff/SKILL.md) for target constraints and the offline reconstruction `.md` file. On no, continue this workflow normally. While awaiting an answer, continue independent inspection and behavior design. Keep Vantage-specific guidance in that skill.
+
 Apply react-color-theming when the task defines or changes shared color tokens or themes.
 
 When the task also changes an API contract, form submission, or server-state lifecycle, apply the matching React skill to that part. Share the same component context and verification evidence.

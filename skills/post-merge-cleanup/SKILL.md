@@ -1,6 +1,6 @@
 ---
 name: post-merge-cleanup
-description: Finish explicitly requested merge/push work with branch cleanup. Keep chats open; archive only on a separate explicit chat request. The exact mp command authorizes preparation and hook publication; mpa is retired.
+description: Publish explicitly requested work through GitHub pull requests, preserve commits, and clean completed branches. Keep chats open; archive only on a separate explicit chat request. The exact mp command authorizes preparation and hook publication; mpa is retired.
 ---
 
 # Post-merge cleanup
@@ -11,7 +11,7 @@ Merge and push only on a separate explicit user request; completing an implement
 
 ## Routine completion
 
-For a scoped mp preparation request, review task changes, reuse valid checks, run outstanding gates, and commit only reviewed task files. Register missing participation normally. Then invoke `mp-command-hook.py --complete` with the repository, session, request ID, and real successful checks supplied by the hook protocol in [merge/push execution](../../rules/merge-push.md#preparation-within-mp). The handoff prepares and publishes; do not ask the user for another command or independently publish a second time. Stop for real blockers or ambiguous scope, preserve unrelated work, and leave the chat open.
+For a scoped mp preparation request, review task changes, reuse valid checks, run outstanding gates, and commit only reviewed task files. Register missing participation normally. Then invoke the protected `codex-git complete` executable directly with the repository, branch, chat, request ID, and real successful checks supplied by the hook protocol in [merge/push execution](../../rules/merge-push.md#preparation-within-mp). Workspace Python or shell wrappers would prevent its own executable rule from applying to Git metadata writes. The handoff prepares and publishes; do not ask the user for another command or independently publish a second time. Stop for real blockers or ambiguous scope, preserve unrelated work, and leave the chat open.
 
 Already-ready mp requests publish directly through the hook. For other explicitly requested publication, reuse one protected inspection/receipt and run only outstanding required gates. Never skip secret scanning or publication checks. Failed publication needs state inspection before recovery.
 
@@ -32,9 +32,15 @@ Before integration, inspect all commits and uncommitted changes in the requested
 
 ## Registered local publish helper
 
-For Ryan's registered `customization`, `mynormal`, and `marketnuance` repositories, prefer the protected executable `/Users/ryanudelhoven/.local/share/codex-publish/codex-git` after explicit merge/push authorization and completed verification. See [publish helper](../../rules/publish-helper.md) for exact arguments and limits. Do not execute the writable source copy as an approved shortcut.
+For Ryan's verified GitHub HTTPS repositories (absolute paths, including future projects; legacy aliases remain supported), prefer the protected executable `/Users/ryanudelhoven/.local/share/codex-publish/codex-git` after explicit merge/push authorization and completed verification. See [publish helper](../../rules/publish-helper.md) for exact arguments and limits. Do not execute the writable source copy as an approved shortcut.
 
-Run `publish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` as one direct command. It registers the integrating chat, checks the checkout and destination, fast-forwards main, publishes, verifies the remote commit, and removes only the completed feature branches. Reuse its receipt instead of repeating these mutations or Python tracking calls. It refuses divergence; integrate remote changes on the feature branch and repeat required verification before retrying. Other failures require inspecting the reported current state; never force-push or bypass its checks.
+Run `publish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` as one direct command after verifying that the installed publisher supports the PR workflow in [publish helper](../../rules/publish-helper.md). It registers participation, validates the destination and account, scans outgoing history, pushes the exact verified feature tip, opens or reuses a same-repository PR, and merges through GitHub using a merge commit. It verifies feature ancestry in published main, synchronizes local main, and deletes only completed branches. Reuse its receipt; never substitute the legacy direct-main push or repeat successful mutations. An older installed helper requires reviewed installation before use.
+
+Keep the feature branch local until explicit publication authorization. `mp` authorizes pushing it, creating the PR under Ryan's GitHub account, merging, and verified cleanup. Respect explicit narrower destinations and branch-retention requests. Use descriptive commit messages; the helper derives new PR titles and bodies from commit history. If repository templates or custom validation details require a richer description, prepare the matching PR first using an authorized API operation or GitHub CLI with `--body-file`; the publisher reuses it. Preserve meaningful individual commits and accurate attribution; avoid squash merges by default. Confirm Ryan's author email maps to his GitHub account; preserve collaborators' authorship. Never manufacture contributions, rewrite dates, or change account visibility without a separate request. Private contribution counts may require the user to enable their profile setting.
+
+Wait for required checks and approvals. Never self-approve, use admin bypass, disable protection, silently squash, or directly push main when the PR workflow is blocked. Pending checks or missing approvals leave the PR and branches intact. Report the PR URL and blocker; inspect live source, checks, and merge state before deliberate recovery. Reuse an existing matching PR rather than creating duplicates. Repository policies requiring a different merge method need an explicit user decision; preserve branches meanwhile.
+
+The default preserves commits so eligible work reaches the default branch. Deleting merged branch references does not remove those commits or their contribution eligibility. GitHub still determines credit; do not promise counts or immediate graph updates. See [GitHub contribution criteria](https://docs.github.com/en/account-and-profile/reference/profile-contributions-reference).
 
 The receipt preserves participation evidence. After successful publication and cleanup, run `finish REPOSITORY codex/FEATURE VERIFIED_CHAT_UUID` once to close that branch lifecycle. This does not archive the chat. Report publication and cleanup once; preserve the branch on incomplete publication or cleanup.
 
