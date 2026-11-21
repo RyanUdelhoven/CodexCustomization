@@ -17,6 +17,8 @@ For a scoped mp preparation request, review task changes, reuse valid checks, ru
 
 Already-ready mp requests publish directly through the hook. For other explicitly requested publication, reuse one protected inspection/receipt and run only outstanding required gates. Never skip secret scanning or publication checks. Failed publication needs state inspection before recovery.
 
+For GitHub/network failures, use [shared access recovery](../../rules/merge-push.md#github-access-recovery-all-git-actions). Diagnose policy versus authentication, permissions, and missing refs; prefer protected live reads for inspection. A failed push/merge may already have changed GitHub: inspect live heads and matching PR state before deliberate recovery. Never blindly retry publication, duplicate a PR, or use a read request as mutation authorization. Leases, readiness, and secret gates still apply.
+
 A merge request automatically authorizes and requires deleting the completed feature branch both locally and on its source remote, if present. Complete cleanup within the merge workflow after verifying successful integration and target publication; do not wait for a separate cleanup request or conversational confirmation. Keep execution permission requirements and explicit requests to retain a branch. If cleanup cannot safely complete, report the retained branch and concrete blocker rather than treating the merge workflow as fully complete.
 
 Feature-branch owns branch preparation before repository edits. Switching to the merge target for authorized integration and cleanup is allowed; create or reuse a feature branch before further implementation.

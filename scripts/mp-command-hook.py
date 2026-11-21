@@ -115,11 +115,16 @@ def request_preparation(event, reason):
         'Register this chat on the branch if needed without claiming historical '
         'creation. Do not ask the user for a separate commit or preparation command. '
         'Stop and report real blockers, ambiguous scope, or denied execution access. '
-        'After checks and committing, invoke the protected executable directly: '
+        'After checks and committing, write the actual successful check commands '
+        'as a JSON array of strings to /tmp/codex-mp-checks-' + session + '.json '
+        'using a file-writing tool. Preserve command text literally; do not expand '
+        'variables or execute the evidence. Then invoke the protected executable directly: '
         + shlex.quote(str(PUBLISHER)) + ' complete ' + shlex.quote(str(repo)) + ' ' + branch + ' ' + session
         + ' --request ' + request['request_id']
-        + " --check 'actual successful check command' (repeat --check as needed). "
+        + ' --checks-file /tmp/codex-mp-checks-' + session + '.json. '
         'Use normal execution permissions; do not wrap it in Python or a shell. '
+        'Keep every argument literal: shell expansions such as "$PATH" can prevent '
+        'the executable allowance from matching and cause protected Git lock failures. '
         'The direct protected entry point is required so its executable rule applies '
         'to Git metadata writes. Do not run the workspace Python --complete command. '
         'This records readiness and invokes '

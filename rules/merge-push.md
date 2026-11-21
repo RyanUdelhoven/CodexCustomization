@@ -36,19 +36,35 @@ blockers; do not stop merely to ask for another commit/prepare command.
 Finish by invoking the protected executable directly with the `complete` action:
 `/Users/ryanudelhoven/.local/share/codex-publish/codex-git complete REPOSITORY codex/FEATURE CHAT_UUID --request REQUEST_UUID`.
 Use the repository, branch, chat, and request identifier supplied by the hook.
-Pass actual successful check commands through
-repeatable `--check` arguments. That handoff records the verified commit and runs
+Write actual successful check commands as a JSON array of strings to
+`/tmp/codex-mp-checks-CHAT_UUID.json` with a file-writing tool. Pass that literal
+absolute path through `--checks-file`; keep evidence out of shell syntax.
+That handoff records the verified commit and runs
 protected publish/finish. It requires the same repository/branch/chat and unchanged
 request history; it expires after 30 minutes or a later user message. It runs no
 checks itself, so never fabricate results. It does not archive.
 
 Do not invoke completion through workspace Python or another shell wrapper.
 Children inherit the caller's sandbox; their own executable rules are not
-re-evaluated. Direct invocation uses the protected helper's existing allowance,
+re-evaluated. Direct invocation with literal arguments uses the protected helper's existing allowance,
 including the Git metadata access required by participation and readiness records.
 It loads only its reviewed installed `mp-command-hook.py` dependency. Missing
 or stale protected installation requires reviewed installation, not a broad
 Python allowance or changes to Git directory permissions.
+
+Shell expansion in an argument (for example `"$PATH"` in `--check`) can prevent
+the direct executable allowance from matching. The command then runs sandboxed
+and nested tracking fails at its protected Git lock. Simple quoting of literal
+evidence works, but prefer `--checks-file` for all completion handoffs. The JSON
+strings remain inert, including variables, redirections and command substitutions.
+Never wrap the invocation in an interpreter or expand its arguments.
+
+For diagnosis without publication, use the same literal invocation with action
+`probe` and `--checks-file`, omitting `--request`. It validates the clean checkout,
+inspects nested tracking, tests temporary Git metadata writes/locking, and removes
+its scratch directory. It creates no readiness or request record, changes no refs
+or participation lifecycle, and performs no network operations. A successful probe
+verifies access only; it does not authorize publication or establish passed checks.
 
 The existing `--prepare` mode may still pre-record already-reviewed clean commits,
 but is internal and optional; it is not another user step. Changed contents need
@@ -104,6 +120,50 @@ Independent reads may share one orchestration call but remain separate commands.
 Protected reader: `/Users/ryanudelhoven/.local/share/codex-publish/codex-read`.
 Its supported operations and arguments match [reader documentation](README.md).
 Never execute an allowlisted writable source copy instead of the protected install.
+
+## GitHub access recovery (all Git actions)
+
+When an ordinary Git/gh operation fails, classify the actual error before recovery.
+An allowlist denial or CONNECT/proxy 403 is a network-policy block, not evidence of
+expired credentials. HTTP 401/authentication failures need credential repair;
+HTTP 403/404 or repository-not-found can mean permissions or private visibility.
+A missing remote ref is not an access failure. Generic connection failures do not
+prove any one cause. Never print tokens or reset authentication speculatively.
+
+Use the installed protected helper directly with literal arguments for bounded
+live reads, including dirty checkouts and future matching repositories:
+
+```text
+codex-git remote-branches ABSOLUTE_REPOSITORY_PATH
+codex-git remote-tip ABSOLUTE_REPOSITORY_PATH main
+codex-git remote-info ABSOLUTE_REPOSITORY_PATH
+codex-git fetch-ref ABSOLUTE_REPOSITORY_PATH main
+```
+
+Replace `codex-git` with `/Users/ryanudelhoven/.local/share/codex-publish/codex-git`.
+`remote-branches` lists live heads. `remote-tip` returns live existence/tip and a
+separately labeled cached tip; absence never authorizes deletion. `remote-info`
+checks the fixed GitHub account and repository API using GET only. `fetch-ref`
+downloads one literal branch into objects and FETCH_HEAD; it never updates tracking
+refs, switches branches, or merges. Use its returned full SHA for inspection and
+branch bases; `origin/main` can remain stale. Fetch has local effects and needs an
+actual fetch/inspection requirement; a branch-list request needs only a read.
+No action accepts arbitrary URLs, Git arguments, API endpoints, or publication flags.
+No branch participation/chat ID is required for these non-publication actions.
+
+Attempt the matching protected read once after an ordinary access failure. If it
+also fails, stop and report the classified error; request sanctioned operation
+access where available. Do not remove proxies, disable TLS, broaden shell/Python
+allowances, change managed network policy, or repeat commands blindly. If the
+installed helper lacks the action, review/install the source first; never run the
+writable source as a protected workaround. The installation is machine-local and
+must be repeated on a new machine; it cannot guarantee future policy grants.
+
+For an authorized mutation, retain the existing publish/complete/cleanup flow and
+all leases, secret gates, and readiness checks. A failed mutation may already have
+pushed or merged: inspect local state and live heads, then inspect the matching PR
+through an authorized API/UI before deliberate recovery. Read actions never grant
+publication or authorize retrying a consumed mp request. Never publish to test access.
 
 ## Registered workflow
 
