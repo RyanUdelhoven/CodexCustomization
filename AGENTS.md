@@ -55,6 +55,41 @@ ambiguous scope. An unavailable hook or failed publication does not authorize
 blind manual fallback. Publication never archives chats. `mpa` remains retired.
 Follow [shortcut interpretation](rules/merge-push.md#contextual-shortcuts).
 
+## Read-only inspection
+
+Perform routine read-only inspection without asking for conversational permission.
+Use existing allowed commands or protected readers for the required capability.
+For the current Git branch, use `git rev-parse --abbrev-ref HEAD`; for branch
+listings, use `git for-each-ref` with the needed filtering and formatting.
+Run Git reads in the command tool's working directory rather than adding arbitrary
+global Git options. Keep reads separate from commands that require review.
+In particular, `git branch --show-current` matches the broad branch-mutation
+prompt rule; bundling it with `git status` makes the whole request require review.
+Use the allowed read form instead of escalating that bundle. Do not broaden
+mutation permissions to fix inspection friction. Managed access restrictions
+and genuinely sensitive reads still apply.
+
+## Routine testing authorization
+
+Requests to implement or fix a feature authorize creating, updating, and running
+the relevant tests, builds, type checks, lint checks, and local browser checks.
+Perform these checks without asking for separate conversational permission.
+Run commands inside the project sandbox first; do not preemptively escalate tests.
+Keep test artifacts, temporary profiles, caches, and reports in the workspace or
+system temporary directories whenever the tools support those locations.
+Use existing browser tools for local interactive checks when suitable.
+
+The `local-testing` permission profile enables loopback test-server access while
+retaining workspace filesystem protections. Prefer `localhost`, `127.0.0.1`,
+`::1`, or app-specific `.localhost` URLs for local checks. Managed policy and
+an existing chat's selected permissions may override the configured default.
+Eligible approval requests route to Codex's automatic reviewer by default;
+this includes necessary browser-test escalations that the macOS sandbox blocks.
+If a check still requires approval, identify the actual blocked capability;
+do not treat a test filename or runner name as proof of bounded execution.
+This authorization does not cover deployment, publication, destructive data
+resets, unrelated filesystem changes, or bypassing managed security controls.
+
 ## New app runtime and local use
 
 All new app projects must include working Docker packaging. Apply `dockerize-app`
