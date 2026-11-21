@@ -33,13 +33,22 @@ Register the managing chat if needed, without fabricating creation history. Stop
 for unresolved scope, failed gates, denied execution access, or other concrete
 blockers; do not stop merely to ask for another commit/prepare command.
 
-Finish by invoking the existing `scripts/mp-command-hook.py --complete` from the
-Codex customization installation, with `--cwd`, `--session`, and the `--request`
-identifier supplied by the hook. Pass actual successful check commands through
+Finish by invoking the protected executable directly with the `complete` action:
+`/Users/ryanudelhoven/.local/share/codex-publish/codex-git complete REPOSITORY codex/FEATURE CHAT_UUID --request REQUEST_UUID`.
+Use the repository, branch, chat, and request identifier supplied by the hook.
+Pass actual successful check commands through
 repeatable `--check` arguments. That handoff records the verified commit and runs
 protected publish/finish. It requires the same repository/branch/chat and unchanged
 request history; it expires after 30 minutes or a later user message. It runs no
 checks itself, so never fabricate results. It does not archive.
+
+Do not invoke completion through workspace Python or another shell wrapper.
+Children inherit the caller's sandbox; their own executable rules are not
+re-evaluated. Direct invocation uses the protected helper's existing allowance,
+including the Git metadata access required by participation and readiness records.
+It loads only its reviewed installed `mp-command-hook.py` dependency. Missing
+or stale protected installation requires reviewed installation, not a broad
+Python allowance or changes to Git directory permissions.
 
 The existing `--prepare` mode may still pre-record already-reviewed clean commits,
 but is internal and optional; it is not another user step. Changed contents need

@@ -115,11 +115,14 @@ def request_preparation(event, reason):
         'Register this chat on the branch if needed without claiming historical '
         'creation. Do not ask the user for a separate commit or preparation command. '
         'Stop and report real blockers, ambiguous scope, or denied execution access. '
-        'After checks and committing, run python3 ' + shlex.quote(str(Path(__file__).resolve()))
-        + ' --complete --cwd ' + shlex.quote(str(repo)) + ' --session ' + session
+        'After checks and committing, invoke the protected executable directly: '
+        + shlex.quote(str(PUBLISHER)) + ' complete ' + shlex.quote(str(repo)) + ' ' + branch + ' ' + session
         + ' --request ' + request['request_id']
         + " --check 'actual successful check command' (repeat --check as needed). "
-        'Use normal execution permissions. This records readiness and invokes '
+        'Use normal execution permissions; do not wrap it in Python or a shell. '
+        'The direct protected entry point is required so its executable rule applies '
+        'to Git metadata writes. Do not run the workspace Python --complete command. '
+        'This records readiness and invokes '
         'protected publication for this request. Do not call raw publication or '
         'retry a partial publication blindly. Report the result and leave the chat '
         'open. This authorization is scoped to this repository/branch and expires '

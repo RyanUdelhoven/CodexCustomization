@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import runpy
 import subprocess
 import sys
 import time
@@ -207,6 +208,18 @@ class Publisher:
         self.git('rev-parse', '--verify', 'refs/heads/' + branch)
         return self.tracking('register', branch, chat)
 
+    def complete(self, branch, chat, request, checks):
+        """Run the scoped mp handoff entirely inside the protected entry point."""
+        self.validate()
+        if self.git('symbolic-ref', '--short', 'HEAD') != branch:
+            raise ValueError('Completion requires the requested feature branch checked out')
+        # Never load the workspace dispatcher or accept a caller-selected module.
+        module = INSTALL / 'mp-command-hook.py'
+        if module.is_symlink() or not module.is_file():
+            raise ValueError('Install the reviewed protected mp handoff dependency first')
+        hook = runpy.run_path(str(module))
+        return hook['complete'](str(self.repo), chat, request, checks)
+
     def publish(self, branch, chat, expected_source=None):
         self.validate()
         current = self.git('symbolic-ref', '--short', 'HEAD')
@@ -302,11 +315,13 @@ class Publisher:
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['inspect', 'register', 'publish', 'cleanup', 'finish'])
+    parser.add_argument('action', choices=['inspect', 'register', 'publish', 'cleanup', 'finish', 'complete'])
     parser.add_argument('repository', help='Known alias or absolute local repository path')
     parser.add_argument('branch')
     parser.add_argument('chat_id')
     parser.add_argument('--expected-source', help='Publish only this verified 40-character commit')
+    parser.add_argument('--request', help='Pending mp request UUID; complete only')
+    parser.add_argument('--check', action='append', default=[], help='Successful check evidence; complete only, never executed')
     args = parser.parse_args(argv)
     if not re.fullmatch(r'codex/[a-z0-9]+(?:[-/][a-z0-9]+)*', args.branch):
         parser.error('Only codex/ feature branches with lowercase letters and digits are accepted')
@@ -315,12 +330,21 @@ def main(argv=None):
     if args.expected_source is not None and (
             args.action != 'publish' or not re.fullmatch(r'[0-9a-f]{40}', args.expected_source)):
         parser.error('--expected-source requires publish and a full lowercase commit SHA')
+    if args.action == 'complete':
+        if not args.request or not re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', args.request):
+            parser.error('complete requires a pending mp --request UUID')
+        if not args.check or not all(check.strip() for check in args.check):
+            parser.error('complete requires actual successful --check evidence')
+    elif args.request is not None or args.check:
+        parser.error('--request and --check require complete')
     try:
         repo, url = resolve_repository(args.repository)
     except (ValueError, OSError) as error:
         parser.error(str(error))
     publisher = Publisher(repo, url)
-    if args.action == 'publish':
+    if args.action == 'complete':
+        result = publisher.complete(args.branch, args.chat_id, args.request, args.check)
+    elif args.action == 'publish':
         result = publisher.publish(args.branch, args.chat_id, expected_source=args.expected_source)
     else:
         result = getattr(publisher, args.action)(args.branch, args.chat_id)

@@ -57,7 +57,7 @@ The hook reads its `cwd` and `session_id`, gets the current branch from Git, and
 checks this chat's branch participation. Already-ready work publishes directly.
 Work needing preparation reaches the assistant in the same turn with a scoped
 request. The assistant completes checks, commits only task files, and uses the
-supplied --complete handoff to record the verified SHA and publish. You do not
+supplied direct protected `codex-git complete` handoff to record the verified SHA and publish. You do not
 run terminal commands, request a separate commit, or prepare records yourself.
 
 Preparation reuses valid checks and preserves unrelated work. Genuine blockers,

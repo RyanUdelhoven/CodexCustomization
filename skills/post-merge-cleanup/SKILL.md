@@ -13,7 +13,7 @@ For a newly requested repository’s initial GitHub connection, [repository-boot
 
 ## Routine completion
 
-For a scoped mp preparation request, review task changes, reuse valid checks, run outstanding gates, and commit only reviewed task files. Register missing participation normally. Then invoke `mp-command-hook.py --complete` with the repository, session, request ID, and real successful checks supplied by the hook protocol in [merge/push execution](../../rules/merge-push.md#preparation-within-mp). The handoff prepares and publishes; do not ask the user for another command or independently publish a second time. Stop for real blockers or ambiguous scope, preserve unrelated work, and leave the chat open.
+For a scoped mp preparation request, review task changes, reuse valid checks, run outstanding gates, and commit only reviewed task files. Register missing participation normally. Then invoke the protected `codex-git complete` executable directly with the repository, branch, chat, request ID, and real successful checks supplied by the hook protocol in [merge/push execution](../../rules/merge-push.md#preparation-within-mp). Workspace Python or shell wrappers would prevent its own executable rule from applying to Git metadata writes. The handoff prepares and publishes; do not ask the user for another command or independently publish a second time. Stop for real blockers or ambiguous scope, preserve unrelated work, and leave the chat open.
 
 Already-ready mp requests publish directly through the hook. For other explicitly requested publication, reuse one protected inspection/receipt and run only outstanding required gates. Never skip secret scanning or publication checks. Failed publication needs state inspection before recovery.
 

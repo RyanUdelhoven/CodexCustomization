@@ -17,6 +17,13 @@ behavior. This is sandbox protection, not root ownership: do not grant an agent
 write access to the installation directory or register it as a writable workspace.
 The user's account can still update it intentionally.
 
+The `complete` action also loads the reviewed installed `mp-command-hook.py`
+from that same protected directory, never the workspace source. Install that
+dependency with mode 444 and the publisher with mode 555 after source review.
+Use direct `/usr/bin/install` commands under normal installation review; no
+installer or interpreter receives a general allowance. Install the dependency
+before the publisher. Keep both copies synchronized after handoff-code changes.
+
 Repository arguments accept an absolute checkout path anywhere under `/Users/ryanudelhoven`, including future projects. The existing `customization`, `mynormal`, and `marketnuance` aliases remain supported. Paths resolve canonically; the checkout must be the repository root. The literal local origin must be a single `https://github.com/RyanUdelhoven/NAME.git` URL. Other owners, SSH URLs, missing origins, rewrites, includes, and alternate push destinations require ordinary review. No project registration or source update is needed for new matching projects.
 
 After reviewing the complete branch scope, running repository gates, and confirming
@@ -79,7 +86,7 @@ before retrying; no automatic rollback, reset, or force push occurs. Failed clea
 preserves tracking history and requires ordinary repair. The helper never archives
 chats. Archival requires a separate explicit chat request and uses the app tool; publication never triggers it.
 
-`git-workflow.rules` owns reviewed Git grants and raw push/branch prompts.
+`git-workflow.rules` owns reviewed Git grants, raw push prompts, and main-branch deletion prohibitions.
 Historical grants for those same command contexts were removed from the local
 `default.rules`; unrelated grants remain. Keep raw commands prompted. The protected
 helper has a separate executable allow rule, so these prompts do not match it.
@@ -107,8 +114,13 @@ The dispatcher discovers the repository and current feature branch from Git in
 its supplied working directory. Ready work verifies participation and commit-bound
 readiness, then uses publish and finish. If ordinary preparation remains, the hook
 creates a repository/branch/chat-scoped request for the same assistant turn. The
-assistant reviews, checks, and commits only task files, then invokes --complete
-with that request ID. Completion records readiness and publishes without another
+assistant reviews, checks, and commits only task files, then directly invokes
+`codex-git complete REPOSITORY codex/FEATURE CHAT_UUID --request REQUEST_UUID`
+with real successful checks in repeated `--check` arguments. Check strings are
+evidence only and are never executed. Other actions reject these options.
+The direct protected entry point lets its existing rule cover Git metadata
+writes; Python launching the helper as a subprocess inherits Python's sandbox
+instead. Completion records readiness and publishes without another
 user command. The request expires after 30 minutes or a later user message; main,
 detached HEAD, wrong chat/branch, and rewritten request history are refused.
 The Python dispatcher never stages or commits by itself; the authorized assistant
