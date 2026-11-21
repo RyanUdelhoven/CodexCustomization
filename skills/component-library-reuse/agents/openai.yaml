@@ -1,0 +1,4 @@
+interface:
+  display_name: "Component Library Reuse"
+  short_description: "Check component fit and resolve reuse choices"
+  default_prompt: "Use $component-library-reuse to check my library for components that fit this UI."

@@ -47,4 +47,6 @@ Inspect the written file for missing imports, unavailable assets, unsupported de
 
 ## Working with other skills
 
+`component-library-reuse` owns checking the personal library and resolving reuse choices. Reuse its candidate inspection; this skill owns Vantage compatibility and the offline artifact. Reusing a component in ordinary app UI alone does not trigger the Vantage question.
+
 `react-component-builder` owns React implementation and asks the Vantage routing question for library work. This skill owns the confirmed Vantage constraints and Markdown reconstruction bundle, including framework-independent components. Other React skills retain ownership of forms, data, types, theming and verification when those tasks apply; reuse their findings. `handoff-writer` owns general resumable work handoffs; `package-skill` owns prompts to create skills, not component reconstruction. A component bundle alone does not request a new app, hosting, Docker packaging, publication, or deployment; follow those workflows only when the user actually requests an app or those actions.
