@@ -5,6 +5,16 @@ description: Run outstanding repository-defined final gates and verify browser-f
 
 # Code Change Verification
 
+## Check at critical points
+
+Consolidate broad validation at task completion or an explicit ready-for-review handoff, and before merge/push when required evidence is missing or invalidated. Do not run full suites, repeat live browser journeys, or rebuild/restart the user's app after every edit, skill handoff, progress update, or intermediate user message.
+
+During development, run the smallest useful check when it informs the next decision: reproducing a reported defect, confirming its fix, crossing a consequential boundary such as persistence, authentication, or a shared API contract, or investigating an observed failure. Batch routine edits before checking. An explicitly requested check or repository-required checkpoint still runs when required; this timing policy does not waive gates.
+
+At completion, run the applicable outstanding checks together against the final contents, including live-app verification for browser-facing changes. At merge/push, reuse that evidence and run only outstanding or invalidated checks. Later edits invalidate only evidence whose inputs or behavior they affect; a new commit, skill activation, or chat turn alone does not invalidate a result. After a failure, fix the cause and rerun the affected check, broadening only when the evidence warrants it. Stop when applicable checks pass and no relevant uncertainty remains.
+
+Code-change-verification owns this timing policy; specialist skills own check selection and execution. Reuse their evidence without starting a second validation cycle. A progress report is not a completion claim; accurately label work awaiting final validation.
+
 Determine scope from the actual diff, including relevant untracked files. Find the check commands and requirements in applicable repository guidance, manifests, and CI; use project tooling and documented order. Run checks suited to the change and every required gate. Reuse an observed check result when the command, scope, relevant environment, and inputs still match and project policy permits it. Run outstanding final gates against the final contents. If an auto-fix changes files, review the resulting diff and rerun checks affected by the change.
 
 Distinguish failures caused by the change, known baseline failures, environmental blockers, and checks not run. Report partial runs as partial; when applicability of an earlier result is uncertain, rerun the affected check. Fix in-scope failures when authorized, and report commands and outcomes compactly. A prose-only change does not need the code stack unless project rules require it.
@@ -13,7 +23,7 @@ Distinguish failures caused by the change, known baseline failures, environmenta
 
 For an mp preparation request, complete final task review and outstanding required checks, reusing eligible results. That explicit command also authorizes committing only reviewed task files; preserve unrelated changes and use the repository's normal commit hooks. Register the chat if needed, then invoke the supplied protected `codex-git complete` executable directly with actual successful check commands. Do not wrap it in workspace Python or a shell: child processes inherit that caller's sandbox. It records readiness and publishes in the same turn, so no separate user commit or prepare command is needed. Stop on genuine failures or ambiguous scope.
 
-Outside an explicit publication request, do not automatically commit or publish. Optional `--prepare` can record already-reviewed clean commits, but it does not run checks or establish user publication intent. Follow [merge/push execution](../../rules/merge-push.md#preparation-within-mp). Never invent verification evidence.
+Outside an explicit publication request, do not automatically commit or publish. A new-repository request under [repository-bootstrap](../repository-bootstrap/SKILL.md) authorizes its initial local commit; affirmative GitHub setup consent separately authorizes its first baseline push. Optional `--prepare` can record already-reviewed clean commits, but it does not run checks or establish user publication intent. Follow [merge/push execution](../../rules/merge-push.md#preparation-within-mp). Never invent verification evidence.
 
 ## Verify the app the user opens
 
