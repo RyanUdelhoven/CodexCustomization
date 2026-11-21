@@ -164,6 +164,14 @@ repeat the failing launch, reinstall browsers, switch profiles, or substitute an
 Chromium binary merely to retry the same restricted path. Verify any replacement
 path with one minimal launch before running the required journey or test suite.
 
+## Photos added to projects
+
+When adding photos to any project, ask whether the photos or their containing
+folder should be added to `.gitignore`. Reuse an explicit answer already given
+for that task; do not ask again when the user already requested ignoring them.
+Apply the user's choice without assuming photos should be ignored by default.
+Ignoring photos does not authorize deleting the assets.
+
 ## Design preferences
 
 Avoid interfaces that require horizontal scrolling, including page overflow,
