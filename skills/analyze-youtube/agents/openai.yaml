@@ -1,4 +1,4 @@
 interface:
   display_name: "Analyze YouTube"
-  short_description: "Analyze videos with automatic ad removal"
-  default_prompt: "Use $analyze-youtube to remove promotions automatically, analyze each section, and synthesize this video without timestamps using concise sections and linked fact checks."
+  short_description: "Resume video analysis and export grounded knowledge"
+  default_prompt: "Use $analyze-youtube to remove promotions automatically, analyze each section through checked stages, and save grounded knowledge to the durable library. Keep timestamps in evidence exports and omit them from the concise conversational synthesis."

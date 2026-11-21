@@ -242,6 +242,10 @@ class InstalledPolicyTests(unittest.TestCase):
         commands += [[protected + 'codex-git', action, 'customization',
                       'codex/example', '00000000-0000-0000-0000-000000000000']
                      for action in ['inspect', 'register', 'publish', 'finish']]
+        commands.append([protected + 'codex-git', 'complete', str(ROOT),
+                         'codex/example', '00000000-0000-0000-0000-000000000000',
+                         '--request', '00000000-0000-0000-0000-000000000001',
+                         '--check', 'git diff --check'])
         for command in commands:
             with self.subTest(command=command):
                 output = subprocess.check_output(

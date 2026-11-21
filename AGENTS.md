@@ -49,7 +49,7 @@ working directory and checks this chat's participation and verified commit.
 
 Ready work publishes directly. Work needing preparation reaches the assistant
 with a scoped request from the hook; complete that work and invoke the hook's
-`--complete` handoff within the same turn. Do not ask for a separate commit or
+direct protected `codex-git complete` handoff within the same turn. Do not ask for a separate commit or
 preparation command. Preserve unrelated work and stop for genuine blockers or
 ambiguous scope. An unavailable hook or failed publication does not authorize
 blind manual fallback. Publication never archives chats. `mpa` remains retired.
@@ -111,6 +111,14 @@ including verified bookmark-triggered startup. If no, retain Docker packaging an
 omit Coulson registration. If Coulson cannot support the app's platform, explain
 that limitation when asking and resolve the local-use approach with the user.
 Local personal use through Coulson does not request public hosting or deployment.
+
+## Design preferences
+
+Avoid interfaces that require horizontal scrolling, including page overflow,
+carousels, wide tables, tab bars, and horizontally scrolling lists. Prefer
+responsive layouts that wrap or stack content and use vertical scrolling.
+Keep content and controls accessible within the viewport at narrow widths.
+Do not hide clipped content merely to remove a horizontal scrollbar.
 
 ## Writing style
 
