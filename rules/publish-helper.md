@@ -116,8 +116,15 @@ readiness, then uses publish and finish. If ordinary preparation remains, the ho
 creates a repository/branch/chat-scoped request for the same assistant turn. The
 assistant reviews, checks, and commits only task files, then directly invokes
 `codex-git complete REPOSITORY codex/FEATURE CHAT_UUID --request REQUEST_UUID`
-with real successful checks in repeated `--check` arguments. Check strings are
-evidence only and are never executed. Other actions reject these options.
+with `--checks-file /tmp/codex-mp-checks-CHAT_UUID.json`. Write the actual successful
+commands into that JSON array with a file-writing tool, preserving text literally.
+The reader accepts only a bounded regular JSON file, refuses symlinks and non-string
+entries, and never executes evidence. Legacy repeated `--check` arguments still
+accept literal strings, but shell expansion can defeat executable-rule matching.
+The MoneyNotes lock failure reproduced with `"$PATH"` in an ignored tracker argument;
+the same invocation with literal data succeeded. Use literal command arguments
+and a JSON file instead of constructing nested shell quoting.
+Other publication actions reject evidence options.
 The direct protected entry point lets its existing rule cover Git metadata
 writes; Python launching the helper as a subprocess inherits Python's sandbox
 instead. Completion records readiness and publishes without another
@@ -125,3 +132,29 @@ user command. The request expires after 30 minutes or a later user message; main
 detached HEAD, wrong chat/branch, and rewritten request history are refused.
 The Python dispatcher never stages or commits by itself; the authorized assistant
 preparation pass owns those judgment-dependent operations. No path archives chats.
+
+`probe REPOSITORY codex/FEATURE CHAT_UUID --checks-file ABSOLUTE_JSON_PATH`
+tests nested tracking inspection plus temporary metadata writes and locking.
+It creates no request/readiness, performs no network operations, changes no refs
+or lifecycle, and removes its scratch directory. Check evidence remains inert.
+Use this for live sandbox diagnosis without consuming an mp request or publishing.
+The existing helper rule covers the new actions; no new Git permissions or rule
+grants are needed. Install the reviewed dispatcher before the reviewed publisher.
+
+## Bounded live reads
+
+The same installed helper provides `remote-branches REPOSITORY`,
+`remote-tip REPOSITORY BRANCH`, `remote-info REPOSITORY`, and
+`fetch-ref REPOSITORY BRANCH`. See [access recovery](merge-push.md#github-access-recovery-all-git-actions).
+Reads share canonical repository/origin validation and the fixed credential helper;
+they accept dirty checkouts and do not require origin/HEAD or default main.
+`remote-info` permits only fixed GET account/repository calls. Fetch writes only
+objects and FETCH_HEAD, leaves cached origin refs unchanged, disables recursive
+submodules/auto-maintenance, and accepts no refspec, tag, SHA, or arbitrary options.
+Live observations are timestamped snapshots, not guarantees against later changes.
+
+Install the reviewed publisher with mode 555 using a direct `/usr/bin/install`
+operation after source review. Preserve the already installed dispatcher and other
+dependencies. No executable-policy change is needed where the existing protected
+codex-git grant applies; the current session must still demonstrate the new actions.
+A managed-policy denial remains a blocker, not permission to bypass that policy.

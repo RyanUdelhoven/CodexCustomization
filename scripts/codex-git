@@ -1,14 +1,18 @@
 #!/usr/bin/python3 -I
-"""Bounded publication for verified local repositories. No arbitrary Git arguments."""
+"""Bounded publication and live GitHub reads for verified local repositories."""
 import argparse
+import datetime
+import fcntl
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
 import runpy
+import stat
 import subprocess
 import sys
+import tempfile
 import time
 
 HOME = Path('/Users/ryanudelhoven')
@@ -21,6 +25,29 @@ INSTALL = HOME / '.local/share/codex-publish'
 ENV = {'PATH': '/usr/bin:/bin', 'HOME': str(HOME), 'GIT_TERMINAL_PROMPT': '0',
        'GIT_CONFIG_NOSYSTEM': '1', 'GIT_CONFIG_GLOBAL': '/dev/null',
        'GIT_CONFIG_COUNT': '0', 'GIT_NO_REPLACE_OBJECTS': '1'}
+
+
+def read_checks_file(value):
+    """Read bounded JSON data, never source code or shell syntax."""
+    path = Path(value)
+    if not path.is_absolute():
+        raise ValueError('Checks file must be an absolute path')
+    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        info = os.fstat(descriptor)
+        if not stat.S_ISREG(info.st_mode) or info.st_size > 262144:
+            raise ValueError('Checks file must be a regular JSON file of at most 256 KiB')
+        content = os.read(descriptor, 262145)
+        if len(content) > 262144:
+            raise ValueError('Checks file grew beyond 256 KiB')
+        checks = json.loads(content)
+    finally:
+        os.close(descriptor)
+    if (not isinstance(checks, list) or not checks or len(checks) > 100
+            or not all(isinstance(item, str) and item.strip() and len(item) <= 32768
+                       and '\0' not in item for item in checks)):
+        raise ValueError('Checks file must contain 1–100 nonempty command evidence strings')
+    return checks
 
 
 def resolve_repository(value):
@@ -42,10 +69,41 @@ def resolve_repository(value):
     return path, origin
 
 
+def failure_kind(message):
+    """Classify without retrying, exposing credentials, or changing permissions."""
+    text = message.lower()
+    if any(x in text for x in ('not on the allowlist', 'network access to',
+                               'connect tunnel failed', 'proxy connect', 'response 407')):
+        return 'network-policy'
+    if any(x in text for x in ('authentication failed', 'bad credentials', 'http 401',
+                               'could not read username', 'invalid authentication')):
+        return 'authentication'
+    if any(x in text for x in ("couldn’t find remote ref", "couldn't find remote ref")):
+        return 'missing-ref'
+    if any(x in text for x in ('repository not found', 'http 404', 'http 403',
+                               'access denied', 'permission denied')):
+        return 'authorization-or-visibility'
+    if any(x in text for x in ('could not resolve', 'failed to connect', 'error connecting',
+                               'timed out', 'ssl certificate', 'tls')):
+        return 'connectivity'
+    return 'operation-failed'
+
+
+def branch_ref(value):
+    # Exact heads only: no options, revisions, glob patterns, or refspec destinations.
+    if (len(value) > 240 or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._/-]*', value)
+            or any(x in value for x in ('..', '//', '@{'))
+            or any(part.startswith('.') or part.endswith(('.', '.lock')) for part in value.split('/'))
+            or value.startswith('refs/') or value.endswith('/')):
+        raise ValueError('Supply one literal branch name, without refs/heads/ or a refspec')
+    return 'refs/heads/' + value
+
+
 def run(args, cwd, check=True):
     result = subprocess.run(args, cwd=cwd, env=ENV, text=True, capture_output=True)
     if check and result.returncode:
-        raise ValueError(result.stderr.strip() or result.stdout.strip() or 'Command failed')
+        message = result.stderr.strip() or result.stdout.strip() or 'Command failed'
+        raise ValueError('[' + failure_kind(message) + '] ' + message)
     return result
 
 
@@ -61,6 +119,7 @@ class Publisher:
                     '-c', 'credential.helper=', '-c', 'credential.helper=!/usr/local/bin/gh auth git-credential',
                     '-c', 'credential.https://github.com.helper=',
                     '-c', 'credential.https://github.com.helper=!/usr/local/bin/gh auth git-credential',
+                    '-c', 'http.followRedirects=false', '-c', 'http.sslVerify=true',
                     '-c', 'protocol.allow=never', '-c', 'protocol.https.allow=always',
                     '-C', str(self.repo), *args], self.repo, check).stdout.strip()
 
@@ -146,12 +205,12 @@ class Publisher:
             raise ValueError('GitHub did not confirm the PR merge; preserve branches: ' + pr['html_url'])
         return result['sha'], pr['html_url']
 
-    def validate(self):
+    def validate_destination(self):
         if Path(self.git('rev-parse', '--show-toplevel')).resolve() != self.repo:
             raise ValueError('Registered checkout does not match repository root')
         # URL rewriting can redirect even an explicit HTTPS destination.
         config = self.git('config', '--local', '--no-includes', '--get-regexp',
-                          r'^(url\..*\.(insteadof|pushinsteadof)|include.*|credential\..*helper|filter\..*|remote\..*\.(vcs|proxy)|core\.sshcommand|core\.gitproxy)$',
+                          r'^(url\..*\.(insteadof|pushinsteadof)|include.*|credential\..*|http\..*|filter\..*|remote\..*\.(vcs|proxy|uploadpack|receivepack)|extensions\.(partialclone|worktreeconfig)|core\.(sshcommand|gitproxy|alternaterefscommand))$',
                           check=False)
         if config:
             raise ValueError('Transport rewrites, executable config, or includes require manual review')
@@ -159,6 +218,9 @@ class Publisher:
                      ('remote', 'get-url', '--push', '--all', 'origin')]:
             if self.git(*args).splitlines() != [self.url]:
                 raise ValueError('Origin must have exactly the registered HTTPS destination')
+
+    def validate(self):
+        self.validate_destination()
         if self.git('symbolic-ref', 'refs/remotes/origin/HEAD') != 'refs/remotes/origin/main':
             raise ValueError('Registered workflow requires origin default branch main')
         if self.git('status', '--porcelain', '--untracked-files=all'):
@@ -168,13 +230,58 @@ class Publisher:
                ['MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'rebase-apply', 'rebase-merge']):
             raise ValueError('Finish the in-progress Git operation first')
 
+    def remote_read(self, action, branch=None):
+        """Read live state, or fetch one head; never publish or run project code."""
+        ref = branch_ref(branch) if branch is not None else None
+        self.validate_destination()
+        result = {'repository': str(self.repo), 'destination': self.url,
+                  'observed_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                  'publication': False, 'remote_state': 'live',
+                  'tracking_refs': 'unchanged; cached refs are not live evidence'}
+        if action == 'remote-info':
+            account = self.api('user')
+            if account['login'].lower() != 'ryanudelhoven':
+                raise ValueError('Read workflow requires the RyanUdelhoven GitHub account')
+            repository = self.url.removeprefix('https://github.com/').removesuffix('.git')
+            info = self.api('repos/' + repository)
+            result.update(account=account['login'], default_branch=info['default_branch'])
+        elif action == 'remote-branches':
+            rows = self.git('ls-remote', '--heads', self.url).splitlines()
+            heads = {}
+            for row in rows:
+                sha, name = row.split()
+                if not re.fullmatch(r'[0-9a-f]{40}', sha) or not name.startswith('refs/heads/'):
+                    raise ValueError('Unexpected live branch response')
+                heads[name.removeprefix('refs/heads/')] = sha
+            result['branches'] = heads
+        else:
+            cached = self.git('rev-parse', '--verify', 'refs/remotes/origin/' + branch,
+                              check=False) or None
+            if action == 'remote-tip':
+                tip = self.remote_tip(ref)
+                result.update(branch=branch, exists=tip is not None, tip=tip, cached_tip=cached)
+            elif action == 'fetch-ref':
+                # No configured refspec, pruning, tag writes, tracking updates, or maintenance.
+                self.git('fetch', '--no-tags', '--no-recurse-submodules', '--no-auto-maintenance',
+                         '--no-write-commit-graph', '--refmap=', self.url, ref)
+                tip = self.git('rev-parse', '--verify', 'FETCH_HEAD^{commit}')
+                result.update(branch=branch, tip=tip, cached_tip=cached,
+                              local_effects='objects and FETCH_HEAD only; use returned tip for inspection')
+            else:
+                raise ValueError('Unsupported remote read operation')
+        result['observed_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        return result
+
     def remote_tip(self, ref):
         rows = self.git('ls-remote', '--refs', self.url, ref).splitlines()
         if not rows:
             return None
         if len(rows) != 1 or rows[0].split()[1] != ref:
             raise ValueError('Ambiguous remote ref')
-        return rows[0].split()[0]
+        tip = rows[0].split()[0]
+        if not re.fullmatch(r'[0-9a-f]{40}', tip):
+            raise ValueError('Unexpected remote object ID')
+        return tip
 
     def tracking(self, action, branch, chat):
         args = ['/usr/bin/python3', '-I', str(INSTALL / 'branch_chats.py'), action,
@@ -219,6 +326,28 @@ class Publisher:
             raise ValueError('Install the reviewed protected mp handoff dependency first')
         hook = runpy.run_path(str(module))
         return hook['complete'](str(self.repo), chat, request, checks)
+
+    def probe(self, branch, chat, checks):
+        """Exercise nested metadata access without readiness or publication."""
+        self.validate()
+        if self.git('symbolic-ref', '--short', 'HEAD') != branch:
+            raise ValueError('Probe requires the requested feature branch checked out')
+        # This uses the same nested tracker as inspect/complete, including its lock.
+        tracking = self.tracking('inspect', branch, chat)
+        common = Path(self.git('rev-parse', '--path-format=absolute', '--git-common-dir'))
+        # A unique scratch directory cannot be mistaken for a real mp-ready record.
+        # Do not create a pending request, register/close a lifecycle, or call publish.
+        with tempfile.TemporaryDirectory(prefix='codex-publish-probe-', dir=common) as temporary:
+            path = Path(temporary) / 'evidence.json'
+            path.write_text(json.dumps(checks) + '\n')
+            with path.open('a') as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            if json.loads(path.read_text()) != checks:
+                raise ValueError('Probe evidence round trip failed')
+        return {'probe': True, 'publication': False, 'branch': branch,
+                'head': self.git('rev-parse', 'HEAD'), 'checks_count': len(checks),
+                'nested_tracking': 'passed', 'metadata_write_and_lock': 'passed',
+                'lifecycle_id': (tracking.get('record') or {}).get('id')}
 
     def publish(self, branch, chat, expected_source=None):
         self.validate()
@@ -314,14 +443,27 @@ class Publisher:
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['inspect', 'register', 'publish', 'cleanup', 'finish', 'complete'])
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in ('remote-branches', 'remote-tip', 'fetch-ref', 'remote-info'):
+        reader = argparse.ArgumentParser(description='Bounded live GitHub reads; never publication')
+        reader.add_argument('action', choices=['remote-branches', 'remote-tip', 'fetch-ref', 'remote-info'])
+        reader.add_argument('repository')
+        if argv[0] in ('remote-tip', 'fetch-ref'):
+            reader.add_argument('branch')
+        args = reader.parse_args(argv)
+        repo, url = resolve_repository(args.repository)
+        print(json.dumps(Publisher(repo, url).remote_read(args.action, getattr(args, 'branch', None)), indent=2))
+        return
+    parser = argparse.ArgumentParser(description=__doc__, epilog='Live reads: remote-branches REPOSITORY; remote-tip REPOSITORY BRANCH; remote-info REPOSITORY; fetch-ref REPOSITORY BRANCH')
+    parser.add_argument('action', choices=['inspect', 'register', 'publish', 'cleanup', 'finish', 'complete', 'probe'])
     parser.add_argument('repository', help='Known alias or absolute local repository path')
     parser.add_argument('branch')
     parser.add_argument('chat_id')
     parser.add_argument('--expected-source', help='Publish only this verified 40-character commit')
     parser.add_argument('--request', help='Pending mp request UUID; complete only')
-    parser.add_argument('--check', action='append', default=[], help='Successful check evidence; complete only, never executed')
+    evidence = parser.add_mutually_exclusive_group()
+    evidence.add_argument('--check', action='append', default=[], help='Literal check evidence; complete/probe only, never executed')
+    evidence.add_argument('--checks-file', help='Absolute JSON file containing check evidence; preferred over shell arguments')
     args = parser.parse_args(argv)
     if not re.fullmatch(r'codex/[a-z0-9]+(?:[-/][a-z0-9]+)*', args.branch):
         parser.error('Only codex/ feature branches with lowercase letters and digits are accepted')
@@ -333,17 +475,20 @@ def main(argv=None):
     if args.action == 'complete':
         if not args.request or not re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', args.request):
             parser.error('complete requires a pending mp --request UUID')
-        if not args.check or not all(check.strip() for check in args.check):
+        if not args.checks_file and (not args.check or not all(check.strip() for check in args.check)):
             parser.error('complete requires actual successful --check evidence')
-    elif args.request is not None or args.check:
+    elif args.request is not None or ((args.check or args.checks_file) and args.action != 'probe'):
         parser.error('--request and --check require complete')
     try:
+        checks = read_checks_file(args.checks_file) if args.checks_file else args.check
         repo, url = resolve_repository(args.repository)
     except (ValueError, OSError) as error:
         parser.error(str(error))
     publisher = Publisher(repo, url)
     if args.action == 'complete':
-        result = publisher.complete(args.branch, args.chat_id, args.request, args.check)
+        result = publisher.complete(args.branch, args.chat_id, args.request, checks)
+    elif args.action == 'probe':
+        result = publisher.probe(args.branch, args.chat_id, checks)
     elif args.action == 'publish':
         result = publisher.publish(args.branch, args.chat_id, expected_source=args.expected_source)
     else:
@@ -355,4 +500,4 @@ if __name__ == '__main__':
     try:
         main()
     except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as error:
-        sys.exit('Publication stopped; inspect current state before retrying: ' + str(error))
+        sys.exit('Git action stopped; inspect current state before retrying: ' + str(error))

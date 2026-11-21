@@ -200,11 +200,104 @@ class PublicationTests(unittest.TestCase):
                 self.publisher.complete('codex/example', CHAT, CHAT, ['checks'])
             load.assert_not_called()
 
+    def test_checks_file_completion_preserves_complex_evidence_without_execution(self):
+        hook = runpy.run_path(str(ROOT / 'scripts/mp-command-hook.py'))
+        self.publisher.register('codex/example', CHAT)
+        marker = self.root / 'must-not-exist'
+        evidence = ["python3 -m unittest discover -p '*_test.py'",
+                    'PATH="/bin:$PATH" PDF_PYTHON=\'/usr/bin/python3\' node test > log 2>&1',
+                    '$(touch ' + str(marker) + '); `touch ' + str(marker) + '`\nsecond line']
+        path = self.root / 'checks.json'
+        path.write_text(json.dumps(evidence))
+        captured = []
+        def protected(action, repo, branch, session, expected_source=None):
+            if action == 'publish':
+                ready = hook['ready_path'](self.repo / '.git', CHAT)
+                # publish consumes readiness immediately before this callback.
+                captured.append(action)
+                self.assertFalse(ready.exists())
+                return self.publisher.publish(branch, session, expected_source=expected_source)
+            return getattr(self.publisher, action)(branch, session)
+        with patch.dict(hook['handle'].__globals__, publisher=protected):
+            hook['handle']({'hook_event_name': 'UserPromptSubmit', 'prompt': 'mp',
+                            'cwd': str(self.repo), 'session_id': CHAT})
+            request = json.loads(hook['request_path'](self.repo / '.git', CHAT).read_text())
+            original = hook['write_record']
+            def record(target, value):
+                if 'checks' in value:
+                    self.assertEqual(value['checks'], evidence)
+                return original(target, value)
+            with patch.dict(hook['complete'].__globals__, write_record=record), \
+                    patch('runpy.run_path', return_value=hook), \
+                    patch.dict(MODULE['main'].__globals__, Publisher=lambda *args: self.publisher), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                MODULE['main'](['complete', 'customization', 'codex/example', CHAT,
+                                '--request', request['request_id'], '--checks-file', str(path)])
+        self.assertEqual(captured, ['publish'])
+        self.assertFalse(marker.exists())
+        self.assertTrue(self.publisher.tracking('inspect', 'codex/example', CHAT)['record']['closed'])
+
+    def test_probe_exercises_nested_lock_without_publication_or_readiness(self):
+        self.publisher.register('codex/example', CHAT)
+        refs = git('show-ref', cwd=self.repo)
+        remote_refs = git('show-ref', cwd=self.remote)
+        common = self.repo / '.git'
+        tracking = self.publisher.tracking('inspect', 'codex/example', CHAT)
+        contents = {p.name: p.read_bytes() for p in (common / 'codex-branch-chats').iterdir()}
+        with patch.object(self.publisher, 'publish') as publish:
+            result = self.publisher.probe('codex/example', CHAT, ['$(touch never); $PATH > log'])
+            publish.assert_not_called()
+        self.assertFalse(result['publication'])
+        self.assertEqual(result['nested_tracking'], 'passed')
+        self.assertEqual(result['lifecycle_id'], tracking['record']['id'])
+        self.assertEqual(refs, git('show-ref', cwd=self.repo))
+        self.assertEqual(remote_refs, git('show-ref', cwd=self.remote))
+        self.assertEqual(contents, {p.name: p.read_bytes() for p in (common / 'codex-branch-chats').iterdir()})
+        self.assertFalse((common / 'codex-publish').exists())
+        self.assertEqual(list(common.glob('codex-publish-probe-*')), [])
+
+    def test_already_ready_mp_uses_real_nested_tracker_and_preserves_commits(self):
+        hook = runpy.run_path(str(ROOT / 'scripts/mp-command-hook.py'))
+        self.publisher.register('codex/example', CHAT)
+        tip = git('rev-parse', 'HEAD', cwd=self.repo)
+        def protected(action, repo, branch, session, expected_source=None):
+            if action == 'publish':
+                return self.publisher.publish(branch, session, expected_source=expected_source)
+            return getattr(self.publisher, action)(branch, session)
+        with patch.dict(hook['handle'].__globals__, publisher=protected):
+            hook['prepare'](str(self.repo), CHAT, ['git diff --check'])
+            result = hook['handle']({'hook_event_name': 'UserPromptSubmit', 'prompt': 'mp',
+                                     'cwd': str(self.repo), 'session_id': CHAT})
+        self.assertEqual(result['decision'], 'block')
+        self.assertIn('Merged codex/example', result['reason'])
+        git('merge-base', '--is-ancestor', tip, 'main', cwd=self.remote)
+        self.assertTrue(self.publisher.tracking('inspect', 'codex/example', CHAT)['record']['closed'])
+
+    def test_checks_file_rejects_invalid_and_unbounded_data(self):
+        path = self.root / 'checks.json'
+        for value in ('not JSON', '{}', '[]', '[false]', '[""]', '[" "]',
+                      json.dumps(['a'] * 101), json.dumps(['x' * 32769]),
+                      json.dumps(['\0']), ' ' * 262145):
+            with self.subTest(value=value[:60]):
+                path.write_text(value)
+                with self.assertRaises(ValueError):
+                    MODULE['read_checks_file'](str(path))
+        path.write_text('["git diff --check"]')
+        link = self.root / 'link.json'
+        link.symlink_to(path)
+        with self.assertRaises(OSError):
+            MODULE['read_checks_file'](str(link))
+        with self.assertRaises(ValueError):
+            MODULE['read_checks_file']('relative.json')
+        with self.assertRaises(ValueError):
+            MODULE['read_checks_file'](str(self.root))
+
     def test_complete_cli_rejects_unsafe_argument_variants(self):
         for tail in ([], ['--request', 'bad', '--check', 'checks'],
                      ['--request', CHAT], ['--request', CHAT, '--check', ' '],
                      ['--request', CHAT, '--check', 'checks', '--module', '/tmp/evil.py'],
-                     ['--request', CHAT, '--check', 'checks', '--expected-source', 'a' * 40]):
+                     ['--request', CHAT, '--check', 'checks', '--expected-source', 'a' * 40],
+                     ['--request', CHAT, '--check', 'checks', '--checks-file', '/tmp/checks.json']):
             with self.subTest(tail=tail), contextlib.redirect_stderr(io.StringIO()):
                 with self.assertRaises(SystemExit):
                     MODULE['main'](['complete', 'customization', 'codex/example', CHAT, *tail])

@@ -207,3 +207,8 @@ and [approval triggers](https://learn.chatgpt.com/docs/sandboxing/auto-review).
 operations retain approval prompts. The protected publish helper provides the
 validated route without repeated shell approvals; see [publish helper](publish-helper.md).
 Do not whitelist its writable source or its installer. Restart Codex after installation.
+
+GitHub access failures across all projects follow
+[shared access recovery](merge-push.md#github-access-recovery-all-git-actions).
+Use bounded protected live reads rather than treating cached origin refs as live
+state or using publication as an access test.
