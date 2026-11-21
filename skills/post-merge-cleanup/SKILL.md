@@ -13,6 +13,15 @@ For a newly requested repository’s initial GitHub connection, [repository-boot
 
 ## Routine completion
 
+Whenever listing remaining open branches, give each branch an evidence-based
+reason in fewer than 10 words (nine maximum), excluding its name and labels.
+Apply this to completed, stopped, and partially completed workflows. State the
+actual blocker or retention reason, such as “Required checks failed,” “Active
+worktree; concurrent work ongoing,” or “Created after publication snapshot.”
+Do not infer reasons from branch names. If unverified, use “Reason unknown;
+investigation incomplete.” Follow the shared rules for inventory verification,
+remote-only labels, and reporting when no branches remain.
+
 Before preparing a merge, compare the branch's committed tip with live published
 main and inspect its pending changes. A surviving name does not prove missing
 integration; an integrated tip does not include dirty files. Apply

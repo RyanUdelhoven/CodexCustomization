@@ -74,6 +74,11 @@ matching local/remote branch names, label remote-only branches, and exclude
 primary/default merge targets. When none remain, state “Remaining open branches:
 None.” If local or live remote discovery fails, report the known branches and
 explicitly mark the inventory incomplete rather than claiming none remain.
+Whenever listing remaining open branches, append an evidence-based reason to
+each branch in fewer than 10 words (nine maximum), excluding the branch name and
+labels such as remote-only. State the actual blocker or retention reason; do not
+infer it from the branch name. If unverified, use “Reason unknown; investigation
+incomplete.” Example: `codex/example — Awaiting explicit publication request.`
 
 Do not invoke completion through workspace Python or another shell wrapper.
 Children inherit the caller's sandbox; their own executable rules are not
