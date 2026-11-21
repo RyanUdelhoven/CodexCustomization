@@ -18,7 +18,16 @@ ENV = {'PATH': '/usr/bin:/bin', 'HOME': str(Path.home()),
        'GIT_CONFIG_COUNT': '0', 'GIT_NO_REPLACE_OBJECTS': '1',
        'GIT_TERMINAL_PROMPT': '0'}
 UUID = re.compile(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}')
-BRANCH = re.compile(r'codex/[a-z0-9]+(?:[-/][a-z0-9]+)*')
+BRANCH = re.compile(r'[A-Za-z0-9][A-Za-z0-9._/-]*')
+
+
+def feature_branch(branch):
+    return (isinstance(branch, str) and bool(BRANCH.fullmatch(branch))
+            and branch not in ('main', 'master') and not branch.startswith('refs/')
+            and len(branch) <= 240 and not any(x in branch for x in ('..', '//'))
+            and not branch.endswith('/')
+            and all(not p.startswith('.') and not p.endswith(('.', '.lock')) for p in branch.split('/')))
+
 
 
 class NeedsPreparation(ValueError):
@@ -43,16 +52,18 @@ def identity(cwd, session):
         raise ValueError('The hook needs a verified Codex session UUID.')
     repo = Path(git(cwd, 'rev-parse', '--show-toplevel')).resolve()
     branch = git(repo, 'rev-parse', '--abbrev-ref', 'HEAD')
-    if not BRANCH.fullmatch(branch):
-        raise ValueError('mp needs a checked-out codex/ feature branch; main and detached HEAD are refused.')
+    if not feature_branch(branch):
+        raise ValueError('mp needs a checked-out feature branch; main and detached HEAD are refused.')
     common = Path(git(repo, 'rev-parse', '--path-format=absolute', '--git-common-dir'))
     return repo, branch, common
 
 
-def publisher(action, repo, branch, session, expected_source=None):
+def publisher(action, repo, branch, session, expected_source=None, expected_remote=None):
     command = [str(PUBLISHER), action, str(repo), branch, session]
     if expected_source is not None:
         command += ['--expected-source', expected_source]
+    if expected_remote is not None:
+        command += ['--expected-remote', expected_remote]
     result = subprocess.run(
         command,
         env=ENV, text=True, capture_output=True, timeout=180,
@@ -99,45 +110,138 @@ def write_record(path, value):
     temporary.replace(path)
 
 
-def request_preparation(event, reason):
-    repo, branch, common = identity(event.get('cwd'), event.get('session_id'))
+def project_inventory(cwd, session):
+    """Snapshot local branches only. Never switch, commit, fetch, or publish here."""
+    if not isinstance(cwd, str) or not Path(cwd).is_absolute() or not isinstance(session, str) or not UUID.fullmatch(session):
+        raise ValueError('mp needs an absolute checkout and verified chat UUID.')
+    repo = Path(git(cwd, 'rev-parse', '--show-toplevel')).resolve()
+    common = Path(git(repo, 'rev-parse', '--path-format=absolute', '--git-common-dir')).resolve()
+    worktrees = []
+    for block in git(repo, 'worktree', 'list', '--porcelain').split('\n\n'):
+        lines = block.splitlines()
+        location = next((line[9:] for line in lines if line.startswith('worktree ')), None)
+        branch = next((line[18:] for line in lines if line.startswith('branch refs/heads/')), None)
+        if location:
+            worktrees.append({'path': str(Path(location).resolve()), 'branch': branch})
+    coordinator = worktrees[0]['path'] if worktrees else str(repo)
+    current = git(repo, 'rev-parse', '--abbrev-ref', 'HEAD')
+    if current == 'HEAD' and git(repo, 'status', '--porcelain', '--untracked-files=all'):
+        raise ValueError('Detached checkout has changes; assign them to a feature branch before mp.')
+    for tree in worktrees:
+        if tree['branch'] in ('main', 'master') and git(tree['path'], 'status', '--porcelain', '--untracked-files=all'):
+            raise ValueError('Primary checkout has uncommitted changes; assign them to their feature branch before mp.')
+    branches = []
+    for row in git(repo, 'for-each-ref', '--format=%(refname:short) %(objectname)', 'refs/heads/').splitlines():
+        branch, head = row.split()
+        if branch in ('main', 'master'):
+            continue
+        if not feature_branch(branch):
+            raise ValueError('Local branch needs manual review before mp: ' + branch)
+        checkout = next((t['path'] for t in worktrees if t['branch'] == branch), None)
+        branches.append({'branch': branch, 'head': head, 'checkout': checkout, 'status': 'pending'})
+    branches.sort(key=lambda item: (item['branch'] != current, item['branch']))
+    return {'repository': coordinator, 'common': str(common), 'branches': branches, 'worktrees': worktrees}
+
+
+def request_project(event, inventory):
     session = event['session_id']
-    request = {'repository': str(repo), 'branch': branch, 'session_id': session,
-               'head': git(repo, 'rev-parse', 'HEAD'), 'request_id': str(uuid.uuid4()),
-               'requested_at': datetime.now(timezone.utc).isoformat()}
+    common = Path(inventory['common'])
+    request = dict(inventory, scope='project-all-branches-v2', remote_discovery='pending', session_id=session,
+                   request_id=str(uuid.uuid4()), requested_at=datetime.now(timezone.utc).isoformat())
     write_record(request_path(common, session), request)
     context = (
-        'The user issued exact mp, authorizing ONE finish-and-publish pass for '
-        + json.dumps(str(repo)) + ' on ' + branch + '. Preparation is needed: '
-        + str(reason) + ' Review task changes and preserve unrelated work. Reuse '
-        'valid checks, run outstanding required gates, fix in-scope failures, and '
-        'stage/commit only reviewed task files with a descriptive message. '
-        'Register this chat on the branch if needed without claiming historical '
-        'creation. Do not ask the user for a separate commit or preparation command. '
-        'Stop and report real blockers, ambiguous scope, or denied execution access. '
-        'After checks and committing, write the actual successful check commands '
-        'as a JSON array of strings to /tmp/codex-mp-checks-' + session + '.json '
-        'using a file-writing tool. Preserve command text literally; do not expand '
-        'variables or execute the evidence. Then invoke the protected executable directly: '
-        + shlex.quote(str(PUBLISHER)) + ' complete ' + shlex.quote(str(repo)) + ' ' + branch + ' ' + session
-        + ' --request ' + request['request_id']
-        + ' --checks-file /tmp/codex-mp-checks-' + session + '.json. '
-        'Use normal execution permissions; do not wrap it in Python or a shell. '
-        'Keep every argument literal: shell expansions such as "$PATH" can prevent '
-        'the executable allowance from matching and cause protected Git lock failures. '
-        'The direct protected entry point is required so its executable rule applies '
-        'to Git metadata writes. Do not run the workspace Python --complete command. '
-        'This records readiness and invokes '
-        'protected publication for this request. Do not call raw publication or '
-        'retry a partial publication blindly. Report the result and leave the chat '
-        'open. This authorization is scoped to this repository/branch and expires '
-        'on a new user message or after 30 minutes; it does not authorize other work.'
+        'Exact mp authorizes the project-wide local AND remote feature-branch cycle, not just the current task. '
+        'The initial local branch/worktree plan is ' + json.dumps(inventory) + '. '
+        'Review and commit ALL pending project changes in each owning feature checkout; '
+        'do not move dirty files between branches or collect every change into the current branch. '
+        'Use descriptive separate commits for distinct work. Primary/default branches are targets only. '
+        'Before any publication, invoke the installed protected helper directly with literal arguments: '
+        + shlex.quote(str(PUBLISHER)) + ' plan-project ' + shlex.quote(inventory['repository'])
+        + ' ' + session + ' --request ' + request['request_id'] + '. '
+        'This adds live remote-only branches and freezes their exact tips. Use its returned final plan. '
+        'Fetch all remote-only heads before any publication. For each remote-only branch, use protected fetch-ref, require the returned SHA to equal '
+        'its frozen head, and restore that existing branch locally at that exact SHA. '
+        'This restores remote history; it is not creation of a new implementation branch from main. '
+        'Branches created after the finalized snapshot are excluded. '
+        'Prepare existing linked worktrees first; detach only reviewed clean idle feature worktrees '
+        'when needed, and never disrupt active work. Use the primary checkout at '
+        + json.dumps(inventory['repository']) + ' as publication coordinator. '
+        'Process every listed branch individually, ancestors before dependents. Before each merge, '
+        'bring verified published main into that branch with a normal merge if needed and run '
+        'affected required checks. Preserve commits; never squash branches together or force-push. '
+        'Register this chat on each branch without claiming creation. Write each branch’s actual '
+        'successful check commands as an inert JSON array to a branch-specific /tmp file. '
+        'Then invoke the protected executable directly with literal arguments: '
+        + shlex.quote(str(PUBLISHER)) + ' complete ' + shlex.quote(inventory['repository'])
+        + ' BRANCH ' + session + ' --request ' + request['request_id']
+        + ' --checks-file /tmp/BRANCH-CHECKS.json. Substitute one frozen branch and its check file. '
+        'Use the returned remaining list; each completion publishes one PR merge and cleans that '
+        'branch only. An already-integrated branch needs verified cleanup through the same handoff, '
+        'not an empty commit/PR. Do not ask for separate commit or mp commands between branches. '
+        'Stop the cycle on conflicts, failed checks, changed remote tips, pending reviews, ambiguous '
+        'ownership, active worktrees, or denied access; report completed and remaining branches. '
+        'Never blindly retry a partial publication. New user input cancels the pending plan; it '
+        'expires after 30 minutes. Keep chats open. Configuring this behavior does not publish it.'
     )
-    return {'hookSpecificOutput': {'hookEventName': 'UserPromptSubmit',
-                                  'additionalContext': context}}
+    return {'hookSpecificOutput': {'hookEventName': 'UserPromptSubmit', 'additionalContext': context}}
+
+
+def extend_project(cwd, session, request_id, remote_heads):
+    """Called only by the installed protected planner after live fixed-origin reads."""
+    # Planning is allowed from main; it does not switch branches or fetch objects.
+    inventory = project_inventory(cwd, session)
+    common = Path(inventory['common'])
+    path = request_path(common, session)
+    if not path.exists():
+        raise ValueError('No pending mp project request.')
+    request = json.loads(path.read_text())
+    if (request.get('scope') != 'project-all-branches-v2' or request.get('request_id') != request_id
+            or request.get('session_id') != session or request.get('repository') != str(Path(cwd).resolve())
+            or request.get('common') != str(common)):
+        raise ValueError('Pending project request does not match the coordinator and chat.')
+    age = (datetime.now(timezone.utc) - datetime.fromisoformat(request['requested_at'])).total_seconds()
+    if not 0 <= age <= 1800:
+        path.unlink()
+        raise ValueError('The mp request expired; issue mp again.')
+    if request.get('remote_discovery') == 'complete':
+        return request
+    if any(item['status'] != 'pending' for item in request['branches']):
+        raise ValueError('Cannot change project scope after publication starts.')
+    # Refuse unsupported refs before freezing any remote scope or doing mutations.
+    for name, tip in remote_heads.items():
+        if name not in ('main', 'master') and (not feature_branch(name) or not re.fullmatch(r'[0-9a-f]{40}', tip)):
+            raise ValueError('Remote branch needs manual review: ' + name)
+    local = {item['branch']: item for item in request['branches']}
+    for name, tip in remote_heads.items():
+        if name in ('main', 'master'):
+            continue
+        if name not in local:
+            local[name] = {'branch': name, 'head': tip, 'checkout': None,
+                           'status': 'pending', 'remote_only': True}
+    for name, item in local.items():
+        item['remote_tip'] = remote_heads.get(name)
+    request['branches'] = list(local.values())
+    request['remote_discovery'] = 'complete'
+    # New user input during discovery must not recreate a cancelled request.
+    if not path.exists() or json.loads(path.read_text()).get('request_id') != request_id:
+        raise ValueError('The project request was cancelled during live discovery.')
+    write_record(path, request)
+    return request
 
 
 def complete(cwd, session, request_id, checks):
+    _, _, common = identity(cwd, session)
+    directory = common / 'codex-publish'
+    directory.mkdir(parents=True, exist_ok=True)
+    with (directory / 'mp-handoff.lock').open('a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError('Another mp completion is running for this repository.')
+        return _complete(cwd, session, request_id, checks)
+
+
+def _complete(cwd, session, request_id, checks):
     repo, branch, common = identity(cwd, session)
     path = request_path(common, session)
     if not path.exists():
@@ -146,21 +250,51 @@ def complete(cwd, session, request_id, checks):
     if (not isinstance(request_id, str) or not UUID.fullmatch(request_id)
             or request.get('request_id') != request_id
             or request.get('repository') != str(repo)
-            or request.get('branch') != branch
+            or (request.get('scope') != 'project-all-branches-v2' and request.get('branch') != branch)
             or request.get('session_id') != session):
         raise ValueError('The pending mp request does not match this chat and branch.')
     age = (datetime.now(timezone.utc) - datetime.fromisoformat(request['requested_at'])).total_seconds()
     if age < 0 or age > 1800:
         path.unlink()
         raise ValueError('The mp request expired; ask the user to issue mp again.')
+    project = request.get('scope') == 'project-all-branches-v2'
+    entry = None
+    if project:
+        if request.get('remote_discovery') != 'complete':
+            raise ValueError('Complete protected live remote discovery before publishing any branch.')
+        if request.get('common') != str(common.resolve()) or any(item['status'] == 'publishing' for item in request['branches']):
+            raise ValueError('Project cycle has a partial publication; inspect state and issue a new mp.')
+        entry = next((item for item in request['branches'] if item['branch'] == branch), None)
+        if entry is None or entry['status'] != 'pending':
+            raise ValueError('Branch is not pending in this frozen mp plan.')
+        for other in request['branches']:
+            if other['status'] != 'pending' or other['branch'] == branch:
+                continue
+            git(repo, 'cat-file', '-e', other['head'] + '^{commit}')
+            if other['head'] != entry['head'] and git(repo, 'rev-list', '--count', entry['head'] + '..' + other['head']) == '0':
+                raise ValueError('Publish ancestor branch first: ' + other['branch'])
     # Preparation may add commits, but must not replace the requested branch history.
-    git(repo, 'merge-base', '--is-ancestor', request['head'], 'HEAD')
+    git(repo, 'merge-base', '--is-ancestor', entry['head'] if project else request['head'], 'HEAD')
     prepare(cwd, session, checks)
     # A new user message may have arrived while the final snapshot was read.
     if not path.exists() or json.loads(path.read_text()).get('request_id') != request_id:
         raise ValueError('The pending mp request was cancelled or replaced during preparation.')
-    path.unlink()
-    return {'completed': True, 'message': publish(cwd, session)}
+    if not project:
+        path.unlink()
+        return {'completed': True, 'message': publish(cwd, session)}
+    # Persist single-use state before any network mutation. Failures cannot replay it.
+    entry['status'] = 'publishing'
+    write_record(path, request)
+    message = publish(cwd, session, expected_remote=entry['remote_tip'] or 'absent')
+    entry['status'], entry['message'] = 'completed', message
+    remaining = [item['branch'] for item in request['branches'] if item['status'] == 'pending']
+    if not path.exists() or json.loads(path.read_text()).get('request_id') != request_id:
+        return {'completed': True, 'message': message, 'remaining': remaining, 'cancelled': True}
+    if remaining:
+        write_record(path, request)
+    else:
+        path.unlink()
+    return {'completed': True, 'message': message, 'remaining': remaining, 'project_completed': not remaining}
 
 
 def cancel_pending(event):
@@ -187,7 +321,7 @@ def prepare(cwd, session, checks):
     return {'ready': True, 'branch': branch, 'head': info['head'], 'record': str(path)}
 
 
-def publish(cwd, session):
+def publish(cwd, session, expected_remote=None):
     repo, branch, common = identity(cwd, session)
     directory = common / 'codex-publish'
     directory.mkdir(parents=True, exist_ok=True)
@@ -209,13 +343,18 @@ def publish(cwd, session):
             raise NeedsPreparation('Branch, commit, or chat lifecycle changed since verification; prepare again.')
         # Single-use handoff. A partial/failed publication requires deliberate recovery.
         path.unlink()
-        result = publisher('publish', repo, branch, session, expected_source=current['head'])
-        if result.get('branch') != branch or result.get('source') != current['head'] or not result.get('source_preserved') or not result.get('merge_commit') or not result.get('pull_request'):
+        remote_args = {'expected_remote': expected_remote} if expected_remote is not None else {}
+        result = publisher('publish', repo, branch, session, expected_source=current['head'], **remote_args)
+        if (result.get('branch') != branch or result.get('source') != current['head']
+                or (not result.get('already_integrated') and (not result.get('source_preserved')
+                    or not result.get('merge_commit') or not result.get('pull_request')))):
             raise ValueError('Publication receipt differs from the prepared commit; inspect state before retrying.')
         cleanup = result.get('cleanup', [])
         if 'local feature deleted' not in cleanup or any('retained' in step for step in cleanup):
             raise ValueError('Publication returned incomplete cleanup; inspect the protected receipt.')
         publisher('finish', repo, branch, session)
+        if result.get('already_integrated'):
+            return 'Verified ' + branch + ' was already in published main and cleaned up the branch. Chat remains open.'
         return 'Merged ' + branch + ' through ' + result['pull_request'] + ' into main, preserved commits, and cleaned up the branch. Chat remains open.'
 
 
@@ -227,16 +366,11 @@ def handle(event):
     if not isinstance(prompt, str) or prompt.strip() != 'mp':
         return None
     try:
-        reason = publish(event.get('cwd'), event.get('session_id'))
-    except NeedsPreparation as error:
-        try:
-            return request_preparation(event, error)
-        except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as failure:
-            reason = 'mp could not start preparation: ' + str(failure)[:900]
+        inventory = project_inventory(event.get('cwd'), event.get('session_id'))
+        return request_project(event, inventory)
     except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
         reason = 'mp stopped: ' + str(error)[:900] + ' No assistant fallback will run; chat remains open.'
-    # Ready publication and operational failures are consumed. Only preparation
-    # deliberately reaches the model, with a single scoped completion request.
+    # Discovery failures are consumed; successful plans reach the assistant.
     return {'decision': 'block', 'reason': reason}
 
 

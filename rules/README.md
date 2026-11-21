@@ -257,7 +257,8 @@ For ordinary Git inspection, use direct read commands in the checkout's working
 directory. `git-workflow.rules` allows branch operations and forbids deleting main.
 Raw pushes retain approval prompts. Use the protected publisher for verified
 publication and cleanup; see [publish helper](publish-helper.md).
-Do not whitelist its writable source or its installer. Restart Codex after policy changes.
+Do not whitelist its writable source or its installer. Restart Codex after policy
+changes; verify file-only helper updates through their installed entrypoint.
 
 GitHub access failures across all projects follow
 [shared access recovery](merge-push.md#github-access-recovery-all-git-actions).

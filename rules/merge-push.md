@@ -11,38 +11,67 @@ Automatic merge, push, and chat archival are disabled. Completed work stays on
 its feature branch until a separate explicit publication request. Merge/push
 requests never authorize archiving a chat.
 
-Exact standalone lowercase `mp`, ignoring surrounding whitespace, explicitly
-requests PR-based finish-and-publish for the current task. It authorizes final review,
-outstanding checks, committing reviewed task changes, preparation, merge, push,
-and completed-branch cleanup. The user does not issue separate commit/prepare
-commands. Mentions, quotes, longer messages, and retired `mpa` do not trigger it.
-Configuring the hook is not a request to publish the configuration changes.
+Exact standalone lowercase `mp`, ignoring surrounding whitespace, requests the
+project-wide local-and-remote-branch finish-and-publish cycle. It authorizes review, required
+checks, committing all reviewed pending project changes to their owning feature
+branches, individual PR merges, publication, and completed-branch cleanup. It
+includes linked worktrees. Primary/default branches are targets only. Before publication, use the protected
+`plan-project REPOSITORY CHAT_UUID --request REQUEST_UUID` handoff to add live
+remote-only branches and freeze exact remote tips. Fetch all remote-only heads,
+compare each returned SHA with that frozen tip, and restore each existing branch
+locally at that SHA. These are restorations of existing history, not new
+implementation branches from main. Branches created after this final snapshot are
+excluded. A remote tip change stops publication. Mentions,
+quotes, longer messages, and retired `mpa` do not trigger it. Configuring this
+behavior does not publish the configuration or any other pending work.
 
-The `UserPromptSubmit` hook obtains the checkout from `cwd`, current branch from
-Git HEAD, and chat UUID from `session_id`. Ready committed work publishes through
-the protected helper. Dirty work, missing/stale readiness, or missing participation
-instead creates a scoped pending request and adds preparation instructions to the
-same user turn. It does not publish until preparation completes.
+The hook inventories local branches/worktrees and always requests protected live
+remote discovery before any publication, even when the current branch is ready.
+The finalized project request freezes both local and remote scope. Review every
+listed branch; commit its pending changes in its owning checkout. Preserve other
+projects and never carry dirty files across branch switches. Use separate commits
+for distinct work. Ambiguous ownership or changes on a primary/detached checkout
+need resolution before committing; do not guess their destination.
 
 ## Preparation within mp
 
-On the hook's scoped request, review the current task's full branch changes,
-preserve unrelated work, reuse qualifying check results, and run outstanding
-required gates. Fix authorized failures and commit only reviewed task files.
-Register the managing chat if needed, without fabricating creation history. Stop
-for unresolved scope, failed gates, denied execution access, or other concrete
-blockers; do not stop merely to ask for another commit/prepare command.
+Prepare checked-out feature worktrees first. Detach a linked feature worktree only
+after its changes are committed, it is clean, and it is idle; never disrupt active
+work. Use the plan's primary checkout as publication coordinator. Process ancestor
+branches before dependent ones. For each branch, bring verified published main
+into it with a normal merge if needed, resolve authorized conflicts, and run
+required checks for the resulting contents. Preserve existing commits; do not
+squash branches together, cherry-pick away scope, rebase shared history, or force-push.
+Stop the cycle for a genuine conflict, failed check, active worktree, changed remote
+tip, pending review, ambiguous scope, or denied access. Report successes and
+remaining branches; never retry a partial publication blindly.
 
-Finish by invoking the protected executable directly with the `complete` action:
-`/Users/ryanudelhoven/.local/share/codex-publish/codex-git complete REPOSITORY codex/FEATURE CHAT_UUID --request REQUEST_UUID`.
-Use the repository, branch, chat, and request identifier supplied by the hook.
-Write actual successful check commands as a JSON array of strings to
-`/tmp/codex-mp-checks-CHAT_UUID.json` with a file-writing tool. Pass that literal
-absolute path through `--checks-file`; keep evidence out of shell syntax.
-That handoff records the verified commit and runs
-protected publish/finish. It requires the same repository/branch/chat and unchanged
-request history; it expires after 30 minutes or a later user message. It runs no
-checks itself, so never fabricate results. It does not archive.
+Register this chat on each branch without claiming creation history. Write each
+branch's actual successful check commands to a separate inert JSON array in /tmp.
+Invoke the protected executable directly with literal arguments for that branch:
+
+`/Users/ryanudelhoven/.local/share/codex-publish/codex-git complete REPOSITORY FEATURE_BRANCH CHAT_UUID --request REQUEST_UUID --checks-file /tmp/BRANCH-CHECKS.json`
+
+Use the coordinator repository and frozen request UUID from the hook. Each
+completion verifies the original branch tip remains an ancestor, records the
+checked commit/lifecycle, publishes one separate PR, and cleans only that branch.
+Use the returned remaining list to continue without another user command. Already
+integrated branches go through verified cleanup without an empty commit or PR.
+The single-branch handoff remains supported. No helper runs project checks itself.
+
+Project requests are single-use per branch and expire after 30 minutes or a later
+user message. Partial publication consumes that branch and blocks continuation
+until actual state is inspected and a new valid request exists. New branches never
+join an existing plan silently. Keep every chat open.
+
+At the end of every mp cycle, append all remaining open project feature branches
+as bullets in the final report, including stopped or partially completed cycles.
+Refresh local branch/worktree inventory and live remote heads after processing;
+include branches outside the frozen snapshot for reporting only. Deduplicate
+matching local/remote branch names, label remote-only branches, and exclude
+primary/default merge targets. When none remain, state “Remaining open branches:
+None.” If local or live remote discovery fails, report the known branches and
+explicitly mark the inventory incomplete rather than claiming none remain.
 
 Do not invoke completion through workspace Python or another shell wrapper.
 Children inherit the caller's sandbox; their own executable rules are not

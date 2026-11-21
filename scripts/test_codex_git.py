@@ -135,11 +135,11 @@ class PublicationTests(unittest.TestCase):
         self.publisher.register('codex/example', CHAT)
         (self.repo / 'file').write_text('final iteration')
         calls = []
-        def protected(action, repo, branch, session, expected_source=None):
+        def protected(action, repo, branch, session, expected_source=None, expected_remote=None):
             self.assertEqual(Path(repo), self.repo.resolve())
             calls.append(action)
             if action == 'publish':
-                return self.publisher.publish(branch, session, expected_source=expected_source)
+                return self.publisher.publish(branch, session, expected_source=expected_source, expected_remote=expected_remote)
             return getattr(self.publisher, action)(branch, session)
         with patch.dict(hook['handle'].__globals__, publisher=protected):
             response = hook['handle']({'hook_event_name': 'UserPromptSubmit', 'prompt': 'mp',
@@ -149,6 +149,7 @@ class PublicationTests(unittest.TestCase):
             common = self.repo / '.git'
             request_file = hook['request_path'](common, CHAT)
             request = json.loads(request_file.read_text())
+            hook['extend_project'](str(self.repo), CHAT, request['request_id'], {})
             # Simulate the agent's authorized preparation, using real Git/checks.
             git('diff', '--check', cwd=self.repo)
             git('commit', '-am', 'final task iteration', cwd=self.repo)
@@ -179,7 +180,7 @@ class PublicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'No pending mp request'):
             self.publisher.complete('codex/example', CHAT, CHAT, ['checks'])
         path = self.repo / '.git/codex-publish' / ('mp-request-' + CHAT + '.json')
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({'request_id': CHAT, 'repository': str(self.repo.resolve()),
             'branch': 'codex/example', 'session_id': CHAT, 'requested_at': '2000-01-01T00:00:00+00:00'}))
         with self.assertRaisesRegex(ValueError, 'expired'):
@@ -210,18 +211,19 @@ class PublicationTests(unittest.TestCase):
         path = self.root / 'checks.json'
         path.write_text(json.dumps(evidence))
         captured = []
-        def protected(action, repo, branch, session, expected_source=None):
+        def protected(action, repo, branch, session, expected_source=None, expected_remote=None):
             if action == 'publish':
                 ready = hook['ready_path'](self.repo / '.git', CHAT)
                 # publish consumes readiness immediately before this callback.
                 captured.append(action)
                 self.assertFalse(ready.exists())
-                return self.publisher.publish(branch, session, expected_source=expected_source)
+                return self.publisher.publish(branch, session, expected_source=expected_source, expected_remote=expected_remote)
             return getattr(self.publisher, action)(branch, session)
         with patch.dict(hook['handle'].__globals__, publisher=protected):
             hook['handle']({'hook_event_name': 'UserPromptSubmit', 'prompt': 'mp',
                             'cwd': str(self.repo), 'session_id': CHAT})
             request = json.loads(hook['request_path'](self.repo / '.git', CHAT).read_text())
+            hook['extend_project'](str(self.repo), CHAT, request['request_id'], {'codex/example': git('rev-parse', 'codex/example', cwd=self.remote)})
             original = hook['write_record']
             def record(target, value):
                 if 'checks' in value:
@@ -260,16 +262,19 @@ class PublicationTests(unittest.TestCase):
         hook = runpy.run_path(str(ROOT / 'scripts/mp-command-hook.py'))
         self.publisher.register('codex/example', CHAT)
         tip = git('rev-parse', 'HEAD', cwd=self.repo)
-        def protected(action, repo, branch, session, expected_source=None):
+        def protected(action, repo, branch, session, expected_source=None, expected_remote=None):
             if action == 'publish':
-                return self.publisher.publish(branch, session, expected_source=expected_source)
+                return self.publisher.publish(branch, session, expected_source=expected_source, expected_remote=expected_remote)
             return getattr(self.publisher, action)(branch, session)
         with patch.dict(hook['handle'].__globals__, publisher=protected):
             hook['prepare'](str(self.repo), CHAT, ['git diff --check'])
             result = hook['handle']({'hook_event_name': 'UserPromptSubmit', 'prompt': 'mp',
                                      'cwd': str(self.repo), 'session_id': CHAT})
-        self.assertEqual(result['decision'], 'block')
-        self.assertIn('Merged codex/example', result['reason'])
+            request = json.loads(hook['request_path'](self.repo / '.git', CHAT).read_text())
+            hook['extend_project'](str(self.repo), CHAT, request['request_id'], {'codex/example': tip})
+            result = hook['complete'](str(self.repo), CHAT, request['request_id'], ['git diff --check'])
+        self.assertTrue(result['completed'])
+        self.assertIn('Merged codex/example', result['message'])
         git('merge-base', '--is-ancestor', tip, 'main', cwd=self.remote)
         self.assertTrue(self.publisher.tracking('inspect', 'codex/example', CHAT)['record']['closed'])
 
@@ -527,6 +532,63 @@ class PublicationTests(unittest.TestCase):
             with self.subTest(args=args), contextlib.redirect_stderr(io.StringIO()):
                 with self.assertRaises(SystemExit):
                     MODULE['main'](args)
+
+    def test_protected_project_planner_reads_live_heads_without_fetch_or_publication(self):
+        hook = runpy.run_path(str(ROOT / 'scripts/mp-command-hook.py'))
+        hook['handle']({'hook_event_name':'UserPromptSubmit','prompt':'mp',
+                        'cwd':str(self.repo),'session_id':CHAT})
+        path=hook['request_path'](self.repo/'.git',CHAT)
+        request=json.loads(path.read_text())
+        before=git('show-ref',cwd=self.repo)
+        heads={'main':git('rev-parse','main',cwd=self.remote),
+               'feature/remote-only':git('rev-parse','codex/example',cwd=self.remote)}
+        with patch.object(self.publisher,'remote_read',return_value={'branches':heads}) as read, patch.object(self.publisher,'publish') as publish:
+            plan=self.publisher.project_plan(CHAT,request['request_id'])
+            publish.assert_not_called()
+            read.assert_called_once_with('remote-branches')
+        self.assertEqual(plan['remote_discovery'],'complete')
+        self.assertEqual({x['branch'] for x in plan['branches']},{'codex/example','feature/remote-only'})
+        self.assertEqual(git('show-ref',cwd=self.repo),before)
+        self.assertFalse((self.repo/'.git/FETCH_HEAD').exists())
+
+    def test_integrated_branch_uses_cleanup_without_another_pr_or_empty_commit(self):
+        git('switch','main',cwd=self.repo)
+        git('merge','--ff-only','codex/example',cwd=self.repo)
+        git('push','origin','main',cwd=self.repo)
+        git('switch','codex/example',cwd=self.repo)
+        source=git('rev-parse','HEAD',cwd=self.repo)
+        with patch.object(self.publisher,'publish_pr') as pr:
+            receipt=self.publisher.publish('codex/example',CHAT,expected_source=source)
+            pr.assert_not_called()
+        self.assertTrue(receipt['already_integrated'])
+        self.assertTrue(self.publisher.finish('codex/example',CHAT)['closed'])
+        self.assertEqual(git('rev-parse','main',cwd=self.remote),source)
+
+    def test_verified_publication_refreshes_stale_main_cache_for_safe_cleanup(self):
+        git('config','branch.codex/example.remote','origin',cwd=self.repo)
+        git('config','branch.codex/example.merge','refs/heads/main',cwd=self.repo)
+        old=git('rev-parse','refs/remotes/origin/main',cwd=self.repo)
+        receipt=self.publisher.publish('codex/example',CHAT)
+        self.assertNotEqual(old,receipt['published'])
+        self.assertEqual(git('rev-parse','refs/remotes/origin/main',cwd=self.repo),receipt['published'])
+        self.assertIn('local feature deleted',receipt['cleanup'])
+
+    def test_frozen_remote_tip_allows_only_lease_guarded_fast_forward(self):
+        remote=git('rev-parse','codex/example',cwd=self.remote)
+        (self.repo/'final').write_text('reviewed update')
+        git('add','final',cwd=self.repo);git('commit','-m','reviewed update',cwd=self.repo)
+        source=git('rev-parse','HEAD',cwd=self.repo)
+        receipt=self.publisher.publish('codex/example',CHAT,expected_source=source,expected_remote=remote)
+        self.assertEqual(receipt['source'],source)
+        self.assertTrue(receipt['source_preserved'])
+
+    def test_changed_remote_from_frozen_plan_stops_before_any_pr_or_push(self):
+        source=git('rev-parse','HEAD',cwd=self.repo)
+        before=git('show-ref',cwd=self.remote)
+        with self.assertRaisesRegex(ValueError,'changed since the frozen plan'):
+            self.publisher.publish('codex/example',CHAT,expected_source=source,expected_remote='0'*40)
+        self.assertEqual(git('show-ref',cwd=self.remote),before)
+        self.assertFalse(getattr(self.publisher,'api_calls',[]))
 
 
 class IdentityTests(unittest.TestCase):

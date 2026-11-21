@@ -45,20 +45,29 @@ outside tracked files. Remove only its capture handler to pause collection.
 
 Run Git commands from `~/.codex`. Follow `skills/AGENTS.md` for skill changes. Review staged content before committing and pushing. Never add ignored runtime files with `git add -f`.
 
-## One-command feature completion
+## One-command project completion
 
-Open a project chat, describe the feature, and iterate in that chat. When happy,
-submit exact standalone lowercase `mp` (surrounding whitespace allowed). That one
-command authorizes final task review, outstanding checks, committing the reviewed
-task files, merge, push, and completed-branch cleanup. The chat stays open for you
-to archive. `mpa` is retired. Nothing publishes automatically after normal work.
+Submit exact standalone lowercase `mp` to finish every local and live remote feature branch in
+this project, including pending work in linked worktrees. The agent reviews and
+commits changes on their owning branches, then merges each branch individually
+through its own PR, preserving commits and performing verified cleanup. Primary
+branches are targets. Include live remote-only branches by restoring their exact
+frozen commits locally; later-created branches are excluded. Nothing publishes after
+ordinary work or merely because this workflow is configured. Chats stay open;
+`mpa` is retired.
 
-The hook reads its `cwd` and `session_id`, gets the current branch from Git, and
-checks this chat's branch participation. Already-ready work publishes directly.
-Work needing preparation reaches the assistant in the same turn with a scoped
-request. The assistant completes checks, commits only task files, and uses the
-supplied direct protected `codex-git complete` handoff to record the verified SHA and publish. You do not
-run terminal commands, request a separate commit, or prepare records yourself.
+The hook freezes branch/worktree scope. The assistant prepares each branch, runs
+required checks, and invokes the scoped protected `codex-git complete` handoff for
+each one. It brings verified main into subsequent branches when needed and reruns
+affected checks. No additional commit or mp commands are needed between branches.
+Conflicts, active worktrees, failed checks, changed tips, and ambiguous ownership
+stop the cycle with a completed/remaining report. See [execution rules](rules/merge-push.md).
+
+The assistant stores successful check commands in a temporary JSON array and passes
+its literal path through `--checks-file`. This keeps `$PATH`, quotes and redirections
+inside inert evidence rather than shell syntax, preserving the protected executable
+allowance. `codex-git probe` tests nested metadata access without publication or
+readiness; see [the helper contract](rules/publish-helper.md).
 
 Preparation reuses valid checks and preserves unrelated work. Genuine blockers,
 ambiguous scope, main/detached HEAD, conflicting remote history, or publication

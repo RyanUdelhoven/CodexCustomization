@@ -35,7 +35,7 @@ explicit user merge/push authorization, run exactly:
 
 Supply the current verified Codex chat UUID. The workflow currently supports local
 Codex chats and main as the verified remote default branch. It rejects extra
-arguments, arbitrary repositories, primary-branch deletion, dirty checkouts,
+arguments, unverified repositories, primary-branch deletion, dirty checkouts,
 in-progress operations, participating branches in other worktrees, unexpected
 origin destinations, URL rewrites/config includes, and repository credential or filter commands. It fetches main directly
 from the fixed HTTPS destination and requires local main to be contained in remote
@@ -44,8 +44,10 @@ before publication; update the feature branch and rerun affected checks.
 
 The PR-capable publisher uses fixed `/usr/local/bin/gh` API calls to github.com,
 requires the RyanUdelhoven account, and verifies the feature tip's author email. It
-scans outgoing history before any feature push, creates only a missing remote
-feature ref using an exact absence lease, and rejects differing remote tips. It
+scans outgoing history before any feature push. Missing remote feature refs use
+an exact absence lease. In a frozen project plan, existing refs may advance only
+by an ancestry-proven fast-forward with the exact frozen tip lease; other
+differing remote tips are rejected. It
 verifies the pushed tip's GitHub attribution, opens or reuses a same-repository PR,
 and requires clean mergeability, successful checks, and satisfied reviews. It
 merges with `merge_method=merge` pinned to the verified source SHA. It never pushes
@@ -102,22 +104,22 @@ For already integrated and published branches, use `cleanup ABSOLUTE_REPOSITORY_
 
 ## Commit-bound mp hook
 
-The UserPromptSubmit dispatcher passes `publish REPOSITORY BRANCH CHAT_UUID
---expected-source FULL_COMMIT_SHA`. The optional expected-source argument accepts
-only a full lowercase SHA for publish. The protected helper refuses a different
-feature tip before any publication mutation, and integrates the captured commit
-SHA rather than rereading the mutable branch name. Older direct callers can omit
-this argument. Source changes require reviewed installation before the hook can
-use this new argument; never substitute the writable source for the protected copy.
+The UserPromptSubmit dispatcher now inventories local worktrees and emits a
+project request for every exact mp. Before any publication, invoke protected
+`plan-project REPOSITORY CHAT_UUID --request REQUEST_UUID` directly; it reads live
+heads and finalizes local plus remote branch scope. It neither switches branches
+nor pushes. Remote-only histories must be fetched and restored at their frozen
+SHA before per-branch completion. Even already-ready work goes through discovery.
 
-The dispatcher discovers the repository and current feature branch from Git in
-its supplied working directory. Ready work verifies participation and commit-bound
-readiness, then uses publish and finish. If ordinary preparation remains, the hook
-creates a repository/branch/chat-scoped request for the same assistant turn. The
-assistant reviews, checks, and commits only task files, then directly invokes
-`codex-git complete REPOSITORY codex/FEATURE CHAT_UUID --request REQUEST_UUID`
-with `--checks-file /tmp/codex-mp-checks-CHAT_UUID.json`. Write the actual successful
-commands into that JSON array with a file-writing tool, preserving text literally.
+After reviewing, committing, and checking each owning branch, invoke
+`codex-git complete REPOSITORY FEATURE_BRANCH CHAT_UUID --request REQUEST_UUID`
+with `--checks-file /tmp/BRANCH-CHECKS.json`. Reuse the request UUID for remaining
+branches, but keep each branch's actual successful check evidence separate. The
+protected handoff pins the reviewed source SHA and frozen remote tip. A differing
+remote tip stops; a matching existing remote may advance only after ancestry
+proves a fast-forward, guarded by its exact-tip lease. Non-fast-forward updates
+remain refused. Missing remote branches use the exact absence lease.
+
 The reader accepts only a bounded regular JSON file, refuses symlinks and non-string
 entries, and never executes evidence. Legacy repeated `--check` arguments still
 accept literal strings, but shell expansion can defeat executable-rule matching.
@@ -158,3 +160,28 @@ operation after source review. Preserve the already installed dispatcher and oth
 dependencies. No executable-policy change is needed where the existing protected
 codex-git grant applies; the current session must still demonstrate the new actions.
 A managed-policy denial remains a blocker, not permission to bypass that policy.
+
+## Project-wide mp cycle
+
+Exact mp snapshots local non-primary branches/worktrees, then protected live discovery
+adds remote-only branches and freezes their exact tips. The agent commits reviewed pending changes on their owning branches. The frozen plan
+uses the primary worktree as coordinator and one request UUID across separate
+`complete` calls. Each branch retains its own check evidence, verified SHA, PR,
+merge commit, receipt, and cleanup. New user input or the 30-minute timeout cancels
+remaining authorization; failed/partial publication prevents replay or continuation.
+Live remote-only branches are included after exact-tip restoration; later-created branches are excluded. Primary or detached dirty
+work must be assigned explicitly before entering the cycle. Linked feature
+worktrees may be detached only after committing, cleanliness checks, and idle-work
+verification. Required checks run in the normal sandbox, never in this helper.
+
+The publisher accepts bounded literal feature-branch names beyond `codex/` for
+existing project branches, while still refusing main/master sources and unsafe
+ref syntax. New implementation branches retain the `codex/` naming convention.
+After each verified publication/cleanup, origin/main is refreshed to the verified
+published SHA with a compare-and-swap before safe local deletion. This cache update
+belongs only to authorized publication/cleanup; read actions remain unchanged.
+Already-integrated branches receive verified cleanup without duplicate PR creation.
+
+Install both reviewed `mp-command-hook.py` (mode 444) and `codex-git` (mode 555)
+before using the project cycle. Preserve the existing executable-policy boundaries.
+See [preparation](merge-push.md#preparation-within-mp) for sequencing and stop rules.

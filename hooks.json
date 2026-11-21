@@ -8,7 +8,7 @@
             "type": "command",
             "command": "/usr/bin/python3 \"${CODEX_HOME:-$HOME/.codex}/scripts/mp-command-hook.py\"",
             "timeout": 600,
-            "statusMessage": "Finishing and publishing the feature branch"
+            "statusMessage": "Finishing and publishing project branches"
           }
         ]
       }
