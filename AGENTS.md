@@ -76,6 +76,9 @@ without publishing them. Deduplicate matching local/remote names, label remote-o
 branches, and exclude primary/default target branches. If none remain, write
 “Remaining open branches: None.” If discovery fails, label the list incomplete and
 state the verification limit; never claim none remain without verification.
+Whenever listing remaining open branches, give each branch an evidence-based
+reason in fewer than 10 words (nine maximum), excluding its name and labels.
+If the reason is unverified, write “Reason unknown; investigation incomplete.”
 
 Integration checks, conflict questions, continuation after answers, and final
 cleanup follow [the shared workflow](rules/merge-push.md#integration-and-conflict-resolution).
