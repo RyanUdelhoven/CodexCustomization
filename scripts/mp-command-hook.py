@@ -70,6 +70,8 @@ def snapshot(repo, branch, session):
     info = publisher('inspect', repo, branch, session)
     if info.get('branch') != branch or info.get('head') != info.get('feature'):
         raise ValueError('The checkout no longer matches the requested feature branch.')
+    if info.get('publication_workflow') != 'github-pr-merge-v1':
+        raise ValueError('Installed publisher lacks the PR workflow; install the reviewed publisher before mp.')
     record = info.get('tracking', {}).get('record') or {}
     if record.get('closed') or not any(
         p.get('source') == 'codex' and p.get('threadId') == session
@@ -113,11 +115,14 @@ def request_preparation(event, reason):
         'Register this chat on the branch if needed without claiming historical '
         'creation. Do not ask the user for a separate commit or preparation command. '
         'Stop and report real blockers, ambiguous scope, or denied execution access. '
-        'After checks and committing, run python3 ' + shlex.quote(str(Path(__file__).resolve()))
-        + ' --complete --cwd ' + shlex.quote(str(repo)) + ' --session ' + session
+        'After checks and committing, invoke the protected executable directly: '
+        + shlex.quote(str(PUBLISHER)) + ' complete ' + shlex.quote(str(repo)) + ' ' + branch + ' ' + session
         + ' --request ' + request['request_id']
         + " --check 'actual successful check command' (repeat --check as needed). "
-        'Use normal execution permissions. This records readiness and invokes '
+        'Use normal execution permissions; do not wrap it in Python or a shell. '
+        'The direct protected entry point is required so its executable rule applies '
+        'to Git metadata writes. Do not run the workspace Python --complete command. '
+        'This records readiness and invokes '
         'protected publication for this request. Do not call raw publication or '
         'retry a partial publication blindly. Report the result and leave the chat '
         'open. This authorization is scoped to this repository/branch and expires '
@@ -200,13 +205,13 @@ def publish(cwd, session):
         # Single-use handoff. A partial/failed publication requires deliberate recovery.
         path.unlink()
         result = publisher('publish', repo, branch, session, expected_source=current['head'])
-        if result.get('branch') != branch or result.get('source') != current['head'] or result.get('published') != current['head']:
+        if result.get('branch') != branch or result.get('source') != current['head'] or not result.get('source_preserved') or not result.get('merge_commit') or not result.get('pull_request'):
             raise ValueError('Publication receipt differs from the prepared commit; inspect state before retrying.')
         cleanup = result.get('cleanup', [])
         if 'local feature deleted' not in cleanup or any('retained' in step for step in cleanup):
             raise ValueError('Publication returned incomplete cleanup; inspect the protected receipt.')
         publisher('finish', repo, branch, session)
-        return 'Merged ' + branch + ' into main, pushed, and cleaned up the branch. Chat remains open.'
+        return 'Merged ' + branch + ' through ' + result['pull_request'] + ' into main, preserved commits, and cleaned up the branch. Chat remains open.'
 
 
 def handle(event):
