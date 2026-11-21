@@ -49,11 +49,63 @@ working directory and checks this chat's participation and verified commit.
 
 Ready work publishes directly. Work needing preparation reaches the assistant
 with a scoped request from the hook; complete that work and invoke the hook's
-`--complete` handoff within the same turn. Do not ask for a separate commit or
+direct protected `codex-git complete` handoff within the same turn. Do not ask for a separate commit or
 preparation command. Preserve unrelated work and stop for genuine blockers or
 ambiguous scope. An unavailable hook or failed publication does not authorize
 blind manual fallback. Publication never archives chats. `mpa` remains retired.
 Follow [shortcut interpretation](rules/merge-push.md#contextual-shortcuts).
+
+## Routine inspection and skill recording
+
+For ordinary checkout inspection, run `git status --short` and
+`git rev-parse --abbrev-ref HEAD` directly in the checkout's working directory.
+These commands already have reusable allowances. Prefer the latter over
+`git branch --show-current`, which matches the raw branch approval boundary.
+In detached HEAD state it prints `HEAD`; do not treat that as a branch name.
+Do not broaden raw branch allowances: trailing options can turn inspection into mutation.
+
+Invoke `/Users/ryanudelhoven/.local/share/codex-publish/codex-skill-usage`
+directly for skill recording. Its existing allowance covers variable sessions,
+skill lists, project paths, task descriptions, and run IDs; do not create
+per-session or per-task rules or wrap it in Python or a shell helper.
+Use normal sandbox permissions first. If a covered command still prompts,
+inspect the complete invocation and loaded policy rather than adding duplicate
+allowances. These preferences grant no additional task or filesystem authorization.
+
+## Read-only inspection
+
+Perform routine read-only inspection without asking for conversational permission.
+Use existing allowed commands or protected readers for the required capability.
+For the current Git branch, use `git rev-parse --abbrev-ref HEAD`; for branch
+listings, use `git for-each-ref` with the needed filtering and formatting.
+Run Git reads in the command tool's working directory rather than adding arbitrary
+global Git options. Keep reads separate from commands that require review.
+In particular, `git branch --show-current` matches the broad branch-mutation
+prompt rule; bundling it with `git status` makes the whole request require review.
+Use the allowed read form instead of escalating that bundle. Do not broaden
+mutation permissions to fix inspection friction. Managed access restrictions
+and genuinely sensitive reads still apply.
+
+## Routine testing authorization
+
+Requests to implement or fix a feature authorize creating, updating, and running
+the relevant tests, builds, type checks, lint checks, and local browser checks.
+Perform these checks without asking for separate conversational permission.
+Run commands inside the project sandbox first; do not preemptively escalate tests.
+Keep test artifacts, temporary profiles, caches, and reports in the workspace or
+system temporary directories whenever the tools support those locations.
+Use existing browser tools for local interactive checks when suitable.
+
+The `local-testing` permission profile enables loopback test-server access while
+retaining workspace filesystem protections. Prefer `localhost`, `127.0.0.1`,
+`::1`, or app-specific `.localhost` URLs for local checks. Managed policy and
+an existing chat's selected permissions may override the configured default.
+Eligible approval requests route to Codex's automatic reviewer by default;
+this includes necessary browser-test escalations that the macOS sandbox blocks.
+If a check still requires approval, identify the actual blocked capability;
+do not treat a test filename or runner name as proof of bounded execution.
+This authorization does not cover deployment, publication, destructive data
+resets, unrelated filesystem changes, or bypassing managed security controls.
 
 ## New app runtime and local use
 
@@ -76,6 +128,30 @@ including verified bookmark-triggered startup. If no, retain Docker packaging an
 omit Coulson registration. If Coulson cannot support the app's platform, explain
 that limitation when asking and resolve the local-use approach with the user.
 Local personal use through Coulson does not request public hosting or deployment.
+
+## Browser automation on macOS
+
+Prefer the supported built-in browser for inspecting websites and local apps.
+Use the supported Chrome connection when a task needs the user's Chrome session.
+Follow specialized hosting and browser-tool requirements. Preserve repository-defined
+test runners and required checks; interactive browser inspection does not replace them.
+
+Do not launch installed Chrome, Chrome for Testing, or Chromium directly from a
+restricted shell on macOS, including through Node, Playwright, Puppeteer, headless
+flags, or fallback scripts. A headless launch still needs macOS system services.
+When a repository-defined browser test needs a local browser process, use the
+approved execution mechanism outside the restricted sandbox, subject to existing
+permissions. Request approval only when required; never disable the sandbox globally,
+add broad command allowances, or use Chrome's `--no-sandbox` flag as a workaround.
+If an allowed launch path is unavailable, report the check as blocked or unverified.
+
+Treat an immediate `SIGABRT` / `Abort trap: 6` with `_RegisterApplication` or
+`TransformProcessType` frames as a browser startup failure, not an application-test
+failure. Stop retries through that launch path. Capture minimal diagnostic evidence,
+then use an allowed supported browser or approved external execution path. Do not
+repeat the failing launch, reinstall browsers, switch profiles, or substitute another
+Chromium binary merely to retry the same restricted path. Verify any replacement
+path with one minimal launch before running the required journey or test suite.
 
 ## Design preferences
 

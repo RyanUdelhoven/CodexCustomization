@@ -1,5 +1,7 @@
 # Present the analysis
 
+These requirements govern conversational synthesis. Durable evidence exports retain timestamps, segment IDs, structured verdicts and source links according to durable.md. In durable mode export and check the library before replying; `finish` below means only the temporary-mode command.
+
 Write a standalone explanation using direct statements and active voice. Avoid repeated presenter attribution. Preserve distinctions between verified facts, disputed claims, and interpretations through precise wording and linked evidence.
 
 Begin with a short, direct paragraph stating the main takeaway and its implications. Do not label it “BLUF” or add a heading before it. Keep this opening within 30 words as well. Correct or qualify the video's thesis here when the evidence requires it.

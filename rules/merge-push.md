@@ -12,7 +12,7 @@ its feature branch until a separate explicit publication request. Merge/push
 requests never authorize archiving a chat.
 
 Exact standalone lowercase `mp`, ignoring surrounding whitespace, explicitly
-requests finish-and-publish for the current task. It authorizes final review,
+requests PR-based finish-and-publish for the current task. It authorizes final review,
 outstanding checks, committing reviewed task changes, preparation, merge, push,
 and completed-branch cleanup. The user does not issue separate commit/prepare
 commands. Mentions, quotes, longer messages, and retired `mpa` do not trigger it.
@@ -33,13 +33,22 @@ Register the managing chat if needed, without fabricating creation history. Stop
 for unresolved scope, failed gates, denied execution access, or other concrete
 blockers; do not stop merely to ask for another commit/prepare command.
 
-Finish by invoking the existing `scripts/mp-command-hook.py --complete` from the
-Codex customization installation, with `--cwd`, `--session`, and the `--request`
-identifier supplied by the hook. Pass actual successful check commands through
+Finish by invoking the protected executable directly with the `complete` action:
+`/Users/ryanudelhoven/.local/share/codex-publish/codex-git complete REPOSITORY codex/FEATURE CHAT_UUID --request REQUEST_UUID`.
+Use the repository, branch, chat, and request identifier supplied by the hook.
+Pass actual successful check commands through
 repeatable `--check` arguments. That handoff records the verified commit and runs
 protected publish/finish. It requires the same repository/branch/chat and unchanged
 request history; it expires after 30 minutes or a later user message. It runs no
 checks itself, so never fabricate results. It does not archive.
+
+Do not invoke completion through workspace Python or another shell wrapper.
+Children inherit the caller's sandbox; their own executable rules are not
+re-evaluated. Direct invocation uses the protected helper's existing allowance,
+including the Git metadata access required by participation and readiness records.
+It loads only its reviewed installed `mp-command-hook.py` dependency. Missing
+or stale protected installation requires reviewed installation, not a broad
+Python allowance or changes to Git directory permissions.
 
 The existing `--prepare` mode may still pre-record already-reviewed clean commits,
 but is internal and optional; it is not another user step. Changed contents need
@@ -53,10 +62,21 @@ workflow below. All paths leave chats open.
 
 ## Remote feature branches
 
-Keep implementation branches local unless the user requests a remote branch or
-the authorized task needs one for review, backup, or collaboration. A required
-push does not by itself require creating a remote feature branch; follow the
-authorized destination and lifecycle. Existing remote branches remain valid.
+Keep implementation branches local until explicit publication authorization,
+unless earlier review, backup, or collaboration needs a remote branch. Default
+`mp` publication pushes the exact verified feature tip, opens or reuses a GitHub
+pull request under Ryan's account, and merges into main using a merge commit.
+Preserve meaningful individual commits and accurate authorship. Verify account
+and author-email attribution. Never manufacture commits or backdate work.
+Respect narrower explicit push destinations and branch-retention requests.
+
+Wait for checks and approvals; preserve the PR and branches on pending or failed
+checks, missing reviews, incompatible merge policies, or changed source tips.
+Never bypass protections, silently squash, or fall back to pushing main directly.
+Verify the PR merge and feature ancestry in published main before synchronizing
+local main and deleting completed branches. Branch deletion preserves merged
+history and contribution eligibility. Private-profile visibility changes require
+a separate user request. GitHub determines contribution eligibility and counts.
 
 A request to merge a feature branch also authorizes and requires automatic
 removal of that completed feature branch locally and on its source remote, if
@@ -105,7 +125,7 @@ still follow the feature-branch protocol; report tracking gaps without inventing
 
 Review the complete scope before publication. Use the inspection's tracking record
 instead of direct Python inspection. `publish` registers the integrating chat,
-validates the live destination, integrates, verifies publication, and cleans branches.
+validates the live destination, publishes through a PR merge commit, verifies source ancestry in published main, and cleans branches.
 Keep the chat open after publication and cleanup. Run `finish` to close the branch
 participation lifecycle; it does not close the chat. Archival requires a separate
 explicit request targeting the chat.
