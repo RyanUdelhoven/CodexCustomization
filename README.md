@@ -28,7 +28,9 @@ Download optional sounds without changing the hook:
 python3 scripts/download-sounds.py
 ```
 
-The approval sound script always plays Navi Hey, then has an independent one-in-six chance of playing Listen. To use Metal Gear Solid instead, replace the sound command in `hooks.json` with `/usr/bin/afplay` and the path to `metal-gear-solid-alert.mp3`.
+The approval sound script plays Navi Hey only when the active turn explicitly uses the `user` approval reviewer, with a one-in-six chance of Listen. `PermissionRequest` also fires for automatic review, before resolution; it is not proof that a person needs to approve. The script reads the latest runtime `turn_context` from the hook's transcript and checks its turn ID and reviewer, respecting session overrides instead of guessing from global configuration or `permission_mode`. Automatic review stays silent. Missing, stale, unreadable, or changed transcript context also stays silent; transcript format is not a stable hook API. Approval decisions and permission logging remain unchanged. Preview the sound explicitly with `python3 scripts/approval-sound.py --preview`.
+
+Verify sound routing without playing audio: `python3 -B -m unittest discover -s scripts -p 'test_approval_sound.py'`. The current hook API has no separate event for a confirmed visible approval prompt, so the guard distinguishes reviewers rather than observing the UI. Other hooks can still resolve a manually reviewed request without a prompt. See [official hook semantics](https://learn.chatgpt.com/docs/hooks).
 
 The [approval-review skill](skills/approval-review/SKILL.md) records permission
 requests locally without changing approval decisions. Review and trust the new
@@ -55,7 +57,7 @@ The hook reads its `cwd` and `session_id`, gets the current branch from Git, and
 checks this chat's branch participation. Already-ready work publishes directly.
 Work needing preparation reaches the assistant in the same turn with a scoped
 request. The assistant completes checks, commits only task files, and uses the
-supplied --complete handoff to record the verified SHA and publish. You do not
+supplied direct protected `codex-git complete` handoff to record the verified SHA and publish. You do not
 run terminal commands, request a separate commit, or prepare records yourself.
 
 Preparation reuses valid checks and preserves unrelated work. Genuine blockers,

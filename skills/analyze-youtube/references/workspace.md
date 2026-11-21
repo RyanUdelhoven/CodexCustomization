@@ -1,4 +1,6 @@
-# Workspace protocol
+# Transcript workspace protocol
+
+The JSON and paging contracts below serve both modes. `workflow.py` manages temporary runs only. For durable runs use `library.py` and references/durable.md; do not apply this document’s finish, abort, prune or expiry instructions.
 
 All commands below run from the installed skill directory using `.runtime/venv/bin/python`. Otherwise use absolute paths for both interpreter and helper. `RUN` means the absolute path returned by `start`; it is data, not a command. Keep JSON input files within that directory and quote paths. Use structured file writes or quoted heredocs; never interpolate transcript text into shell commands.
 

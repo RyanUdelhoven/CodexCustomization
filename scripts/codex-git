@@ -6,8 +6,10 @@ import json
 import os
 from pathlib import Path
 import re
+import runpy
 import subprocess
 import sys
+import time
 
 HOME = Path('/Users/ryanudelhoven')
 REPOS = {
@@ -48,6 +50,8 @@ def run(args, cwd, check=True):
 
 
 class Publisher:
+    PR_CHECK_ATTEMPTS = 7
+
     def __init__(self, repo, url):
         self.repo, self.url = Path(repo).resolve(), url
 
@@ -59,6 +63,88 @@ class Publisher:
                     '-c', 'credential.https://github.com.helper=!/usr/local/bin/gh auth git-credential',
                     '-c', 'protocol.allow=never', '-c', 'protocol.https.allow=always',
                     '-C', str(self.repo), *args], self.repo, check).stdout.strip()
+
+    def gh(self, *args):
+        return run(['/usr/local/bin/gh', *args], self.repo).stdout.strip()
+
+    def api(self, endpoint, method='GET', **fields):
+        args = ['api', '--hostname', 'github.com', '--method', method, endpoint]
+        for key, value in fields.items():
+            args += ['-f', key + '=' + value]
+        return json.loads(self.gh(*args))
+
+    def contribution_identity(self, source):
+        user = self.api('user')
+        if user['login'].lower() != 'ryanudelhoven':
+            raise ValueError('Publication requires the RyanUdelhoven GitHub account')
+        # The verified account-specific noreply address needs no private-email scope.
+        emails = {str(user['id']) + '+' + user['login'] + '@users.noreply.github.com'}
+        if user.get('email'):
+            emails.add(user['email'])
+        configured = self.git('show', '-s', '--format=%ae', source)
+        if configured.lower() not in {email.lower() for email in emails}:
+            emails.update(row['email'] for row in self.api('user/emails') if row['verified'])
+        if configured.lower() not in {email.lower() for email in emails}:
+            raise ValueError('Commit email is not verified for the GitHub account; preserve history and resolve attribution')
+        return user
+
+    def publish_pr(self, branch, source, user):
+        repository = self.url.removeprefix('https://github.com/').removesuffix('.git')
+        endpoint = 'repos/' + repository
+        config = self.api(endpoint)
+        if config['default_branch'] != 'main' or not config.get('allow_merge_commit', True):
+            raise ValueError('Repository must allow merge commits into default main; do not fall back to squash or direct push')
+        # A changed remote tip is never overwritten, including a concurrent advance.
+        feature = self.remote_tip('refs/heads/' + branch)
+        if feature and feature != source:
+            raise ValueError('Remote feature tip differs; preserve it and inspect before publication')
+        if not feature:
+            self.git('push', '--porcelain', '--force-with-lease=refs/heads/' + branch + ':',
+                     self.url, source + ':refs/heads/' + branch)
+        if self.remote_tip('refs/heads/' + branch) != source:
+            raise ValueError('Remote feature changed; preserve branches and inspect')
+        # Verify attribution from GitHub's commit mapping, without rewriting other authors.
+        mapped = self.api(endpoint + '/commits/' + source)
+        if not mapped.get('author') or mapped['author']['login'].lower() != user['login'].lower():
+            raise ValueError('Feature tip is not attributed to the expected GitHub account; branch retained')
+        prs = self.api(endpoint + '/pulls', head='RyanUdelhoven:' + branch, base='main', state='open')
+        if len(prs) > 1:
+            raise ValueError('Multiple matching pull requests; inspect before merging')
+        if prs:
+            pr = prs[0]
+        else:
+            title = self.git('log', '-1', '--format=%s', source)
+            commits = self.git('log', '--format=%h %B', 'main..' + source)
+            pr = self.api(endpoint + '/pulls', method='POST', head=branch, base='main',
+                          title=title, body='Changes prepared and verified through the mp workflow.\n\nCommits:\n' + commits)
+        number = pr['number']
+        details = self.api(endpoint + '/pulls/' + str(number))
+        if (details['head']['sha'] != source or details['base']['ref'] != 'main'
+                or details['head']['repo']['full_name'].lower() != repository.lower()
+                or details['base']['repo']['full_name'].lower() != repository.lower()
+                or details.get('draft') or details['user']['login'].lower() != user['login'].lower()):
+            raise ValueError('PR identity, source, destination, author, or draft status differs; inspect ' + pr['html_url'])
+        for attempt in range(self.PR_CHECK_ATTEMPTS):
+            state = json.loads(self.gh('pr', 'view', str(number), '--repo', repository,
+                                      '--json', 'mergeStateStatus,reviewDecision,statusCheckRollup'))
+            checks = state.get('statusCheckRollup') or []
+            successful = {'SUCCESS', 'NEUTRAL', 'SKIPPED'}
+            outcomes = [row.get('conclusion') or row.get('state') for row in checks]
+            blocked_checks = any(outcome not in successful for outcome in outcomes)
+            reviews_blocked = state.get('reviewDecision') in {'CHANGES_REQUESTED', 'REVIEW_REQUIRED'}
+            if state.get('mergeStateStatus') == 'CLEAN' and not blocked_checks and not reviews_blocked:
+                break
+            terminal_failure = any(outcome in {'FAILURE', 'ERROR', 'CANCELLED', 'TIMED_OUT',
+                                               'ACTION_REQUIRED', 'STARTUP_FAILURE'} for outcome in outcomes)
+            if (reviews_blocked or terminal_failure or state.get('mergeStateStatus') == 'DIRTY'
+                    or attempt == self.PR_CHECK_ATTEMPTS - 1):
+                raise ValueError('PR checks, approvals, or mergeability are pending/blocked; branches retained: ' + pr['html_url'])
+            time.sleep(5)
+        result = self.api(endpoint + '/pulls/' + str(number) + '/merge', method='PUT',
+                          sha=source, merge_method='merge')
+        if not result.get('merged'):
+            raise ValueError('GitHub did not confirm the PR merge; preserve branches: ' + pr['html_url'])
+        return result['sha'], pr['html_url']
 
     def validate(self):
         if Path(self.git('rev-parse', '--show-toplevel')).resolve() != self.repo:
@@ -114,12 +200,25 @@ class Publisher:
             'worktrees': self.git('worktree', 'list', '--porcelain'),
             'tracking': self.tracking('inspect', branch, chat),
             'remote_state': 'not refreshed; publish checks the live destination',
+            'publication_workflow': 'github-pr-merge-v1',
         }
 
     def register(self, branch, chat):
         self.validate()
         self.git('rev-parse', '--verify', 'refs/heads/' + branch)
         return self.tracking('register', branch, chat)
+
+    def complete(self, branch, chat, request, checks):
+        """Run the scoped mp handoff entirely inside the protected entry point."""
+        self.validate()
+        if self.git('symbolic-ref', '--short', 'HEAD') != branch:
+            raise ValueError('Completion requires the requested feature branch checked out')
+        # Never load the workspace dispatcher or accept a caller-selected module.
+        module = INSTALL / 'mp-command-hook.py'
+        if module.is_symlink() or not module.is_file():
+            raise ValueError('Install the reviewed protected mp handoff dependency first')
+        hook = runpy.run_path(str(module))
+        return hook['complete'](str(self.repo), chat, request, checks)
 
     def publish(self, branch, chat, expected_source=None):
         self.validate()
@@ -150,13 +249,20 @@ class Publisher:
         run(['/usr/bin/python3', '-I', str(INSTALL / 'secret_check.py'),
              'range', '--repo', str(self.repo), '--base', remote, '--tip', source], self.repo)
         tracking = self.tracking('register', branch, chat)
+        user = self.contribution_identity(source)
+        merged, pr_url = self.publish_pr(branch, source, user)
+        self.git('fetch', '--no-tags', self.url, 'refs/heads/main')
+        published = self.git('rev-parse', 'FETCH_HEAD')
+        self.git('merge-base', '--is-ancestor', source, merged)
+        self.git('merge-base', '--is-ancestor', merged, published)
         self.git('switch', 'main')
-        self.git('merge', '--ff-only', source)
-        self.git('push', '--porcelain', self.url, 'refs/heads/main:refs/heads/main')
-        published = self.git('rev-parse', 'refs/heads/main')
+        self.git('merge', '--ff-only', published)
         if self.remote_tip('refs/heads/main') != published:
             raise ValueError('Remote moved or verification failed; preserve branches and inspect manually')
-        return self.remove_completed(branch, chat, source, published, tracking)
+        receipt = self.remove_completed(branch, chat, source, published, tracking)
+        receipt.update(pull_request=pr_url, merge_commit=merged, source_preserved=True)
+        self.receipt_path(branch).write_text(json.dumps(receipt, indent=2) + '\n')
+        return receipt
 
     def cleanup(self, branch, chat):
         """Clean an already published branch without merging or pushing main."""
@@ -209,11 +315,13 @@ class Publisher:
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['inspect', 'register', 'publish', 'cleanup', 'finish'])
+    parser.add_argument('action', choices=['inspect', 'register', 'publish', 'cleanup', 'finish', 'complete'])
     parser.add_argument('repository', help='Known alias or absolute local repository path')
     parser.add_argument('branch')
     parser.add_argument('chat_id')
     parser.add_argument('--expected-source', help='Publish only this verified 40-character commit')
+    parser.add_argument('--request', help='Pending mp request UUID; complete only')
+    parser.add_argument('--check', action='append', default=[], help='Successful check evidence; complete only, never executed')
     args = parser.parse_args(argv)
     if not re.fullmatch(r'codex/[a-z0-9]+(?:[-/][a-z0-9]+)*', args.branch):
         parser.error('Only codex/ feature branches with lowercase letters and digits are accepted')
@@ -222,12 +330,21 @@ def main(argv=None):
     if args.expected_source is not None and (
             args.action != 'publish' or not re.fullmatch(r'[0-9a-f]{40}', args.expected_source)):
         parser.error('--expected-source requires publish and a full lowercase commit SHA')
+    if args.action == 'complete':
+        if not args.request or not re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', args.request):
+            parser.error('complete requires a pending mp --request UUID')
+        if not args.check or not all(check.strip() for check in args.check):
+            parser.error('complete requires actual successful --check evidence')
+    elif args.request is not None or args.check:
+        parser.error('--request and --check require complete')
     try:
         repo, url = resolve_repository(args.repository)
     except (ValueError, OSError) as error:
         parser.error(str(error))
     publisher = Publisher(repo, url)
-    if args.action == 'publish':
+    if args.action == 'complete':
+        result = publisher.complete(args.branch, args.chat_id, args.request, args.check)
+    elif args.action == 'publish':
         result = publisher.publish(args.branch, args.chat_id, expected_source=args.expected_source)
     else:
         result = getattr(publisher, args.action)(args.branch, args.chat_id)
