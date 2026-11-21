@@ -57,34 +57,18 @@ Follow [shortcut interpretation](rules/merge-push.md#contextual-shortcuts).
 
 ## Routine inspection and skill recording
 
-For ordinary checkout inspection, run `git status --short` and
-`git rev-parse --abbrev-ref HEAD` directly in the checkout's working directory.
-These commands already have reusable allowances. Prefer the latter over
-`git branch --show-current`, which matches the raw branch approval boundary.
-In detached HEAD state it prints `HEAD`; do not treat that as a branch name.
-Do not broaden raw branch allowances: trailing options can turn inspection into mutation.
+Perform routine read-only inspection without conversational permission. Run
+`git status --short` and `git rev-parse --abbrev-ref HEAD` in the checkout;
+use `git for-each-ref` for branch listings. Detached HEAD prints `HEAD`.
+Git branch operations are allowed under the reviewed policy; deleting main remains
+forbidden. Keep raw pushes behind their existing approval boundary. Branch
+allowances do not authorize deleting unmerged work or bypassing protected cleanup.
 
 Invoke `/Users/ryanudelhoven/.local/share/codex-publish/codex-skill-usage`
-directly for skill recording. Its existing allowance covers variable sessions,
-skill lists, project paths, task descriptions, and run IDs; do not create
-per-session or per-task rules or wrap it in Python or a shell helper.
-Use normal sandbox permissions first. If a covered command still prompts,
-inspect the complete invocation and loaded policy rather than adding duplicate
-allowances. These preferences grant no additional task or filesystem authorization.
-
-## Read-only inspection
-
-Perform routine read-only inspection without asking for conversational permission.
-Use existing allowed commands or protected readers for the required capability.
-For the current Git branch, use `git rev-parse --abbrev-ref HEAD`; for branch
-listings, use `git for-each-ref` with the needed filtering and formatting.
-Run Git reads in the command tool's working directory rather than adding arbitrary
-global Git options. Keep reads separate from commands that require review.
-In particular, `git branch --show-current` matches the broad branch-mutation
-prompt rule; bundling it with `git status` makes the whole request require review.
-Use the allowed read form instead of escalating that bundle. Do not broaden
-mutation permissions to fix inspection friction. Managed access restrictions
-and genuinely sensitive reads still apply.
+directly with variable session IDs, skills, paths, task descriptions, and run IDs.
+Do not add per-task rules or wrap the recorder in Python or a shell helper.
+Use normal sandbox permissions first; diagnose the complete invocation and loaded
+policy if a covered command still prompts. Managed access restrictions remain.
 
 ## Routine testing authorization
 
