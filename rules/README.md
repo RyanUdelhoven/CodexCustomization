@@ -203,12 +203,10 @@ and [approval triggers](https://learn.chatgpt.com/docs/sandboxing/auto-review).
 
 ## Routine inspection and variable skill recording (November 13, 2026)
 
-Use `git status --short` and `git rev-parse --abbrev-ref HEAD` directly from
-the checkout. Existing reusable prefixes already allow them. The latter prints
-`HEAD` when detached. Keep `git branch --show-current` behind the raw branch
-prompt: prefix rules also accept trailing arguments, and
-`git branch --show-current --no-show-current -D victim` deletes a branch.
-An allow rule cannot override the existing broader prompt rule.
+Use `git status --short`, `git rev-parse --abbrev-ref HEAD`, and `git for-each-ref`
+for ordinary inspection. The reviewed branch policy allows branch operations;
+main-deletion prohibitions and raw-push prompts remain. These command grants do
+not authorize removing unmerged history.
 
 The installed `codex-skill-usage` executable already has a reusable allowance.
 Session IDs, skill lists, `--cwd`, task descriptions, and finish run IDs may vary;
@@ -255,14 +253,7 @@ and [automatic approval review](https://learn.chatgpt.com/docs/agent-approvals-s
 
 ## Merge and push workflow
 
-For ordinary Git inspection, `git status --short` and
-`git rev-parse --abbrev-ref HEAD` already match allow rules. Use `git for-each-ref`
-for branch listings. `git branch --show-current` matches the broad `git branch`
-prompt rule, so bundling it with status or file reads causes a review request
-for the complete bundle. Run the allowed branch-read form in the tool's working
-directory. Do not add a broad `git branch` grant: that family also mutates branches.
-
-`git-workflow.rules` is the canonical reviewed Git policy. Raw pushes and branch
-operations retain approval prompts. The protected publish helper provides the
-validated route without repeated shell approvals; see [publish helper](publish-helper.md).
-Do not whitelist its writable source or its installer. Restart Codex after installation.
+For ordinary Git inspection, use direct read commands in the checkout's working
+directory. `git-workflow.rules` allows branch operations and forbids deleting main.
+Raw pushes retain approval prompts. Use the protected publisher for verified
+publication and cleanup; see [publish helper](publish-helper.md).
