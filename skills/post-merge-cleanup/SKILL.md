@@ -9,6 +9,8 @@ For a direct request to archive a specific chat, use [archival guidance](referen
 
 Merge and push only on a separate explicit user request; completing an implementation or skill change does not authorize publication. Standalone `mp` uses the hook: ready work publishes directly; a scoped preparation request reaches the assistant in the same turn. `mpa` is retired. Follow [shortcut interpretation](../../rules/merge-push.md#contextual-shortcuts).
 
+For a newly requested repository’s initial GitHub connection, [repository-bootstrap](../repository-bootstrap/SKILL.md) owns the consented first push of initial main. The PR publisher requires that remote baseline first. This exception does not authorize publishing later feature work.
+
 ## Routine completion
 
 For a scoped mp preparation request, review task changes, reuse valid checks, run outstanding gates, and commit only reviewed task files. Register missing participation normally. Then invoke the protected `codex-git complete` executable directly with the repository, branch, chat, request ID, and real successful checks supplied by the hook protocol in [merge/push execution](../../rules/merge-push.md#preparation-within-mp). Workspace Python or shell wrappers would prevent its own executable rule from applying to Git metadata writes. The handoff prepares and publishes; do not ask the user for another command or independently publish a second time. Stop for real blockers or ambiguous scope, preserve unrelated work, and leave the chat open.
