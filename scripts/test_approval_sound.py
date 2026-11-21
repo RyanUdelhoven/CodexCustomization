@@ -3,6 +3,7 @@ import io
 import json
 from pathlib import Path
 import runpy
+import re
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -75,6 +76,60 @@ class ApprovalSoundTests(unittest.TestCase):
 
     def test_preview_is_explicit_and_does_not_require_transcript(self):
         self.assertEqual(len(self.run_hook(arguments=["--preview"])), 1)
+
+    def test_question_tools_alert_without_permission_review_or_transcript(self):
+        for name in MODULE['QUESTION_TOOLS']:
+            field = 'title' if name.endswith('_async') else 'question'
+            event = {'hook_event_name': 'PreToolUse', 'tool_name': name,
+                     'tool_input': {'questions': [{field: 'Which behavior should remain?'}]}}
+            with self.subTest(tool=name):
+                self.assertEqual(len(self.run_hook(event)), 1)
+                event['tool_input'] = json.dumps(event['tool_input'])
+                self.assertEqual(len(self.run_hook(event)), 1)
+
+    def test_question_batch_plays_once_and_other_tools_stay_silent(self):
+        event = {'hook_event_name': 'PreToolUse', 'tool_name': 'request_user_input_async',
+                 'tool_input': {'questions': [{'title': 'First?'}, {'title': 'Second?'}]}}
+        self.assertEqual(len(self.run_hook(event)), 1)
+        for name in ['Bash', 'exec', 'request_user_input_async_extra', 'mcp__search', None, []]:
+            with self.subTest(tool=name):
+                self.assertEqual(self.run_hook(dict(event, tool_name=name)), [])
+        self.assertEqual(self.run_hook(dict(event, hook_event_name='PostToolUse')), [])
+
+    def test_invalid_question_payloads_stay_silent(self):
+        for arguments in [None, 'not JSON', [], {}, {'questions': []},
+                          {'questions': [{}]}, {'questions': [{'title': ' '}]},
+                          {'questions': [{'title': 'First?'}, None]}]:
+            with self.subTest(arguments=arguments):
+                event = {'hook_event_name': 'PreToolUse', 'tool_name': 'request_user_input_async',
+                         'tool_input': arguments}
+                self.assertEqual(self.run_hook(event), [])
+
+    def test_text_question_fallback_is_explicit(self):
+        self.assertEqual(len(self.run_hook(arguments=['--question'])), 1)
+
+    def test_registered_question_hook_matches_supported_tools_only(self):
+        hooks = json.loads(Path(__file__).resolve().parents[1].joinpath('hooks.json').read_text())
+        groups = hooks['hooks']['PreToolUse']
+        for name in MODULE['QUESTION_TOOLS']:
+            matched = [group for group in groups if re.search(group['matcher'], name)]
+            self.assertEqual(len(matched), 1)
+            self.assertIn('approval-sound.py', matched[0]['hooks'][0]['command'])
+        for name in ['Bash', 'exec_command', 'request_user_input_async_extra']:
+            self.assertFalse(any(re.search(group['matcher'], name) for group in groups))
+
+    def test_questions_keep_the_occasional_hey_listen_variant(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sounds = Path(directory) / 'sounds'
+            sounds.mkdir()
+            (sounds / 'navi-hey-listen-soft.wav').touch()
+            with patch('sys.argv', ['approval-sound.py', '--question']), \
+                    patch.dict('os.environ', {'CODEX_HOME': directory}), \
+                    patch('subprocess.run') as play, \
+                    patch.dict(MODULE['main'].__globals__, {'randbelow': lambda _: 0}):
+                MODULE['main']()
+            self.assertEqual(len(play.call_args_list), 1)
+            self.assertTrue(play.call_args.args[0][-1].endswith('navi-hey-listen-soft.wav'))
 
     def test_bad_stdin_does_not_fail_hook(self):
         with patch("sys.argv", ["approval-sound.py"]), \
