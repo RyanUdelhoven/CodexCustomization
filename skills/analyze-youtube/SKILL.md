@@ -1,6 +1,6 @@
 ---
 name: analyze-youtube
-description: Analyze spoken content from YouTube links using captions or free local transcription, automatic promotion removal, resumable staged analysis, fact-checked synthesis, and durable knowledge exports. Use when the user asks to summarize, critique, compare, understand, or extract lessons from a video.
+description: Analyze spoken content from YouTube links using captions or free local transcription, automatic promotion removal, resumable staged analysis, fact-checked synthesis, and durable knowledge exports. Use when the user asks to summarize, critique, compare, understand, or extract lessons from videos, or iteratively analyze a transcript collection.
 ---
 
 # Analyze YouTube
@@ -16,6 +16,18 @@ Read [the durable stage protocol](references/durable.md) before starting or resu
 The user selected this library and currently wants no chatbot integration. Export vendor-neutral knowledge independently. Saved files do not train, connect, or automatically improve a chatbot. If integration is later requested, establish the target system and permissions first; do not build a chatbot as part of video analysis.
 
 An explicit request for disposable/private temporary processing selects the legacy `workflow.py` mode below; never export that mode without authorization. In durable mode substitute `library.py` commands for `workflow.py`; acquisition, promotion classification, source coverage and semantic analysis rules below still apply. Keep raw speech and promotion decisions private in `runs/`; publish only checked synthesis, claim records, and knowledge units.
+
+## Compare a collection or revisit it for another purpose
+
+For a requested corpus/channel analysis or repeated research questions over saved
+transcripts/documents, read [the collection protocol](references/collections.md).
+Use `scripts/collection.py` for inventory, shared coding, evidence and comparison,
+then separate purpose folders for memos, verification and synthesis. Reuse retained
+per-video speech and source IDs; do not reacquire or reclean for each question.
+Documents are supporting collection sources, not a general document-ingestion trigger.
+Keep ordinary single-video analysis on the existing five stages. These are flexible,
+methods-inspired adaptations, not a claim of academic certification. Separate source
+observations from interpretation and preserve context, negative cases and uncertainty.
 
 ## Acquire speech
 
