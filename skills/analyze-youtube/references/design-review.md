@@ -26,3 +26,48 @@ Static walkthroughs: a summary request selects durable stages; context loss resu
 Executed transcript/retrieval tests and durable fixture tests, including export routing, source separation, original timestamps, revision retention, stale-input rejection, exact quotes, epistemic statuses, read coverage, failed verdicts and corruption filtering. The tests mock acquisition/network services; they do not establish live YouTube availability, semantic analysis quality or external source credibility. The protected skill validator checks packaging/frontmatter; it does not establish behavioral quality.
 
 The ordinary system interpreter lacked PyYAML for the bundled validator; the installed protected validator succeeded. No dependency was installed for validation. The user-selected library was initialized separately from customization source, with no video data or chatbot integration. No independent agent evaluation was performed.
+
+## Collection extension — November 21, 2026
+
+The user explicitly selected amendment of analyze-youtube. Reviewed the session
+skill catalog and read skill-creator, skill-deconfliction, feature-branch,
+research-backed-skill-builder, task-research, repository-navigation and
+code-change-verification alongside the existing entrypoint/durable implementation.
+Only analyze-youtube needed changes. Task-research excludes skill authoring;
+research owns method evidence, artifact skills own document parsing when relevant,
+and analyze-youtube owns this transcript-centered collection. Supporting document
+snapshots do not add a general document-analysis trigger. No invocation policy changed.
+
+Reopened both original open-access methods papers; no paper text or implementation
+was copied. [Gale et al. (2013)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3848812/)
+informs the shared coding framework, contextual evidence charting and within/across
+case comparison. [Thomas and Harden (2008)](https://link.springer.com/article/10.1186/1471-2288-8-45)
+informs separating descriptive observations from analytical interpretations, with
+traceable links. These health-research methods inform an adaptation for transcripts;
+they do not demonstrate effectiveness for investment analysis or certify this workflow.
+The handoff's Cochrane overview was not necessary to settle these design choices;
+its reported access restriction remains unresolved, and no claim relies on it.
+
+Chose a separate standard-library collection helper rather than changing the existing
+video schema, duplicating cleaned transcripts per question, or building a database.
+Shared inventory/framework/evidence/comparison feed independent purpose folders.
+Hash receipts conservatively invalidate downstream work; changing one question
+preserves other purposes. Content-based export revisions retain prior conclusions.
+Working stage documents are current-state artifacts; major draft history is explicitly
+agent-maintained, while exported revisions are retained automatically.
+
+Walkthroughs: a normal video summary stays on five stages; channel research reuses
+prepared per-video runs; a second analytical purpose reuses evidence; revised codes
+stale comparison/purposes; changed source text stales all dependent work; a document
+alone does not broaden skill discovery; a chatbot request remains separate. No
+unresolved ownership conflict or neighboring skill edit was identified. This is a
+targeted interaction review, not an executed audit of the entire installed skill set.
+
+Collection fixture tests cover staged creation, source preparation reuse, promotion
+exclusion, original timestamps/document locators, purpose independence, shared and
+question invalidation, revision retention, corruption filtering, quote/coverage and
+certainty rejection, path boundaries, CLI routing and bounded reads. Existing video
+tests remain applicable. Tests use temporary data and mocked acquisition; no private
+library, vault, live channel analysis or paid service was used. Mechanical checks do
+not evaluate interpretation quality, detect every leaked promotion, or establish
+external source credibility. No independent agent evaluation was performed.
