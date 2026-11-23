@@ -15,6 +15,36 @@ Use `/Users/ryanudelhoven/development/component_library/public/library-shell.js`
 
 Compare purpose, interactions, public API, framework, dependencies, accessibility, responsive behavior, and target environment. Explain necessary adaptation before proposing reuse. A visual resemblance or family checkbox alone does not establish a fit. Embedded demo controls do not establish standalone families; partial coverage stays partial. Existing families can have multiple useful variants.
 
+## Recognize a toggle
+
+When the user asks for a visual UI toggle, interpret it as a control that changes
+one binary state: ON/OFF or option A/option B. Use a rounded pill-shaped track
+with a circular thumb that moves between two positions. Make the selected state
+clear through thumb position and an additional cue such as text or track fill;
+color alone must not carry the state. Keep the setting's visible name stable.
+The user's reference shows ON with the thumb right and a filled track, OFF with
+the thumb left and an outlined track, plus smaller muted disabled versions.
+Preserve the recognizable track-and-thumb form; adapt colors, size, and typography
+to the consuming UI rather than requiring the reference's green or dark surface.
+
+For concrete ComponentAuthor examples, read
+`/Users/ryanudelhoven/development/component_library/components/toggle-switch/toggle-switch.md`
+and
+`/Users/ryanudelhoven/development/component_library/components/minimal-toggle/minimal-toggle.md`.
+Toggle Switch provides a browser JavaScript factory; Minimal Toggle uses native
+HTML/CSS without component JavaScript. Both demonstrate ON/OFF, two sizes,
+disabled states, and keyboard focus. Verify current sources and target compatibility
+through the discovery workflow above; these references do not select a default.
+
+For option A/option B, clearly map both labels to the two thumb positions. Retain
+exactly two states. Adapt the ON/OFF examples rather than implying they already
+implement arbitrary option labels. Use semantics appropriate to the choice:
+a named on/off setting can use a native checkbox with switch semantics; two named
+alternatives need both choices exposed accessibly. Preserve keyboard operation,
+visible focus, disabled behavior, and programmatically available state. A request
+for a toggle does not authorize substituting tabs, an action button, a dropdown,
+or a multi-option selector; follow an explicit request for those controls instead.
+
 ## Resolve the reuse choice
 
 If a component fits, name the variant, explain its fit and material adaptation, and ask whether to reuse it. Bundle related candidates into one concise question when useful. Continue independent work while the answer is pending; defer implementation that depends on the choice. Silence does not choose reuse or custom construction.
