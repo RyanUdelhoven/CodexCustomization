@@ -17,7 +17,7 @@ Use a focused research pass proportional to the unknown. Explain the approach ch
 
 ## Scope and priorities
 
-Identify the outcome, success criteria, operating environment, existing capabilities, and explicit constraints. Use available context before asking questions. Ask only when missing information materially changes feasibility; otherwise state assumptions. Do not access private accounts just to establish whether the user has them.
+Identify the outcome, success criteria, operating environment, existing capabilities, and explicit constraints. Use available context before asking questions. During research framing, ask only when missing information materially changes feasibility; otherwise state assumptions. When `interview` also applies, it owns the selected requirements interview and may explore consequential behavior, terminology, or scope decisions beyond feasibility. Reuse its answers and brief rather than repeat discovery. Do not access private accounts just to establish whether the user has them.
 
 Apply these ordered preferences to feasible approaches. Explicit user requirements override defaults. Compare the first meaningful difference before later criteria; do not invent weighted scores. Exclude approaches that cannot achieve the outcome. Describe substantial tradeoffs even when the ordering favors a weaker approach.
 

@@ -12,7 +12,7 @@ description: Implement or extend React and TypeScript components when UI constru
 
 ## Working with other skills
 
-Apply [component-library-reuse](../component-library-reuse/SKILL.md) when selecting or adding UI components. It owns library candidates and reuse choices; this workflow owns React integration and adaptation. Reuse settled choices and existing project primitives.
+Apply [component-library-reuse](../component-library-reuse/SKILL.md) when selecting or adding UI components. It owns library candidates and reuse choices; this workflow owns React integration and adaptation. Reuse settled choices and existing project primitives. For toggle requests, follow its [toggle definition and ComponentAuthor references](../component-library-reuse/SKILL.md#recognize-a-toggle): a binary state control with a pill-shaped track and movable circular thumb. This applies when adapting an existing primitive as well as selecting a library candidate.
 
 For component-library work, ask “Are these components for Vantage at work?” before choosing target-dependent dependencies or integrations, unless already answered for this component or batch. On yes, apply [vantage-component-handoff](../vantage-component-handoff/SKILL.md) for target constraints and the offline reconstruction `.md` file. On no, continue this workflow normally. While awaiting an answer, continue independent inspection and behavior design. Keep Vantage-specific guidance in that skill.
 
