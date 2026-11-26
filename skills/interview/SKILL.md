@@ -21,6 +21,8 @@ Before substantive interview questions, use the available structured user-questi
 
 Wait for the user's choice; a preselected recommendation or silence is not an answer. Do not mix interview questions into the selection batch. An explicitly named path or combination already selects it: acknowledge and begin without asking again. If the user requests the full menu, show all eight paths. Reuse the selection for the current task; do not reopen the menu on every follow-up. Offer a different path when new uncertainty warrants it, rather than silently changing interview scope.
 
+Keep questions answerable in normal chat as well as the structured tool. When yielding for a path choice, include the actual selection question and offered paths in the final response, including the recommendation and “Skip questions and proceed” option. Apply the same rule to every pending substantive question batch: restate each question and its relevant choices concisely, with consistent recommendations and material tradeoffs, and allow free text. Do not end with only a summary or a reference to the question UI; commentary alone does not preserve pending questions at turn completion. Omit answered or withdrawn questions. Continue using the structured tool and its existing notification behavior; repeating the text does not require another tool call or sound alert.
+
 | Path | Recommend when | Read after selection |
 |---|---|---|
 | App Features | New or changed functionality, components, behavioral requirements | [App Features](references/app-features.md) |

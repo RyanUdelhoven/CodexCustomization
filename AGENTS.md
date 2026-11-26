@@ -254,6 +254,15 @@ Reuse explicit amendment choices already given for the task. A keyword such as
 
 ## Questions and attention sounds
 
+Whenever using a structured user-question tool, also write the actual questions
+and relevant choices in normal chat. If yielding with questions still pending,
+include them in the final response so they remain answerable after the turn ends;
+commentary or the tool UI alone is insufficient. Keep wording concise and choices
+consistent with the tool, preserve recommendations and material tradeoffs, and
+allow a free-text reply. Do not replace pending questions with a progress summary
+or merely refer to the question UI. Omit questions already answered or withdrawn.
+This applies to interview path menus, substantive batches, and other skill questions.
+
 Use a structured user-question tool when available, including for merge conflicts
 and capability-amendment choices. The Navi `PreToolUse` hook alerts once per
 question batch; do not also invoke playback manually. When no question tool is
